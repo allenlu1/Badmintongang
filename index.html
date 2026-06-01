@@ -443,7 +443,7 @@ window.showView = function(id) {
 
 // ── main render ───────────────────────────────────────────────────────────────
 function renderMain() {
-  document.getElementById('shareurl').textContent = window.location.href.length>55 ? window.location.href.slice(0,55)+'…' : window.location.href;
+  document.getElementById('shareurl').textContent = 'https://bit.ly/4ee9dku';
   document.getElementById('uname').value = user.name;
 
   const isHost = user.isHost;
@@ -1006,7 +1006,7 @@ window.setFilter = function(f,btn) {
   renderMain();
 };
 window.copyLink = function() {
-  navigator.clipboard.writeText(window.location.href).then(()=>toast('Link copied!')).catch(()=>toast('Copy the URL from your browser'));
+  navigator.clipboard.writeText('https://bit.ly/4ee9dku').then(()=>toast('Link copied!')).catch(()=>toast('Copy the URL from your browser'));
 };
 window.saveName = function() {
   let v = document.getElementById('uname').value.trim();
