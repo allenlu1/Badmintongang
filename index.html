@@ -136,7 +136,7 @@ svg.icon{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;str
 <div class="app-header">
   <div class="hrow">
     <h1>
-      <svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="19" r="3"/><line x1="12" y1="16" x2="12" y2="10"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="7.5" y1="7" x2="9" y2="10"/><line x1="16.5" y1="7" x2="15" y2="10"/><path d="M7.5 7 C7 5 8 3 10 3"/><path d="M16.5 7 C17 5 16 3 14 3"/><path d="M10 3 C11 2.5 13 2.5 14 3"/></svg>
+      <svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="17" cy="7" rx="5" ry="5" transform="rotate(-45 17 7)"/><circle cx="17" cy="7" r="2" /><line x1="13.5" y1="10.5" x2="3" y2="21"/></svg>
       Badminton Gang
     </h1>
     <div id="host-badge" style="display:none" class="hbadge">
@@ -166,6 +166,7 @@ svg.icon{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;str
       <input type="text" id="uname" placeholder="e.g. Allen" autocomplete="name" onkeydown="if(event.key==='Enter')saveName()" />
       <button class="btn btn-green" onclick="saveName()">Save</button>
       <div style="flex-basis:100%;height:0"></div>
+      <div style="font-size:11px;color:var(--g400);width:100%">Type your name and press <strong>Save</strong> to join sessions.</div>
       <div style="flex:1"></div>
       <div id="hcbar" style="display:none;gap:6px;align-items:center">
         <button class="btn btn-purple btn-sm" onclick="showView('add-session')">
@@ -315,7 +316,7 @@ const db = getDatabase(fbapp);
 
 const PIN = 'smash2026';
 const UKEY = 'nbc_user_v2';
-const REGULARS = ['Jason','Vivian','Andy','Raymond','Cindy','Allen','Ken','Vince','Jimmy','Astrid'];
+let REGULARS = ['Jason','Vivian','Andy','Raymond','Cindy','Allen','Ken','Vince','Jimmy','Astrid'];
 const COURT_FEE = 136;
 
 let sessions = [];
@@ -333,7 +334,7 @@ const escA = s => String(s||'').replace(/'/g,"\\'");
 const ini = n => String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
 const fmtD = () => new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short'});
 const fmtDT = () => new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
-const dbKey = n => String(n).replace(/[.#$\[\]\s]/g,'_');
+const dbKey = n => String(n).toLowerCase().replace(/[.#$\[\]\s]/g,'_');
 
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -388,6 +389,17 @@ function getDefaultSessions() {
 
 // ── Firebase ──────────────────────────────────────────────────────────────────
 function initDB() {
+  // Load regulars from DB (falls back to hardcoded list if not set yet)
+  onValue(ref(db,'regulars'), snap => {
+    const data = snap.val();
+    if (Array.isArray(data) && data.length > 0) {
+      REGULARS = data;
+    } else {
+      // Seed the default list into DB on first run
+      set(ref(db,'regulars'), REGULARS);
+    }
+  });
+
   onValue(ref(db,'sessions'), snap => {
     const data = snap.val();
     if (!data) {
@@ -437,7 +449,7 @@ function renderMain() {
   const upcoming = sessions.filter(s=>!isPast(s.dateISO));
   const thisWeek = upcoming.filter(s=>isThisWeek(s.dateISO));
   const twCount = thisWeek.length>0 ? Object.values(thisWeek[0].attendees||{}).filter(a=>!a.withdrawn).length : 0;
-  const mine = user.name ? sessions.filter(s=>Object.values(s.attendees||{}).some(a=>a.name===user.name&&!a.withdrawn)).length : 0;
+  const mine = user.name ? sessions.filter(s=>Object.values(s.attendees||{}).some(a=>a.name.toLowerCase()===user.name.toLowerCase()&&!a.withdrawn)).length : 0;
 
   document.getElementById('st-s').textContent = upcoming.length;
   document.getElementById('st-m').textContent = user.name ? mine : sessions.reduce((a,s)=>a+Object.values(s.attendees||{}).filter(x=>!x.withdrawn).length,0);
@@ -445,7 +457,7 @@ function renderMain() {
 
   let list;
   if (filter==='upcoming') list = upcoming;
-  else if (filter==='mine' && user.name) list = sessions.filter(s=>Object.values(s.attendees||{}).some(a=>a.name===user.name));
+  else if (filter==='mine' && user.name) list = sessions.filter(s=>Object.values(s.attendees||{}).some(a=>a.name.toLowerCase()===user.name.toLowerCase()));
   else list = sessions;
 
   const upcomingList = list.filter(s=>!isPast(s.dateISO));
@@ -472,7 +484,7 @@ function renderCard(s, past) {
   const max = s.maxPlayers||12;
   const isFull = active.length>=max;
   const isOpen = openCards[s.id];
-  const myEntry = user.name ? atts.find(a=>a.name===user.name) : null;
+  const myEntry = user.name ? atts.find(a=>a.name.toLowerCase()===user.name.toLowerCase()) : null;
 
   // cost calculation
   const courtFee = s.courtFee||COURT_FEE;
@@ -491,8 +503,8 @@ function renderCard(s, past) {
       <div class="av ${isPaid?'av-p':'av-a'}">${ini(a.name)}</div>
       <span class="aname">${esc(a.name)}</span>
       ${isPaid ? `<span class="paid-tag"><svg class="icon" style="width:10px;height:10px" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Paid</span>` : ''}
-      ${!past && a.name===user.name ? `<button class="btn btn-red btn-sm" onclick="window.withdraw('${s.id}')">Withdraw</button>` : ''}
-      ${user.isHost && a.name!==user.name ? `<button class="btn btn-sm" style="color:var(--g400);font-size:10px" onclick="window.hostRemove('${s.id}','${escA(a.name)}')">Remove</button>` : ''}
+      ${!past && a.name.toLowerCase()===user.name.toLowerCase() ? `<button class="btn btn-red btn-sm" onclick="window.withdraw('${s.id}')">Withdraw</button>` : ''}
+      ${user.isHost && a.name.toLowerCase()!==user.name.toLowerCase() ? `<button class="btn btn-sm" style="color:var(--g400);font-size:10px" onclick="window.hostRemove('${s.id}','${escA(a.name)}')">Remove</button>` : ''}
     </div>`;
   }).join('');
 
@@ -577,17 +589,64 @@ function renderAddForm() {
   d.setDate(d.getDate() + daysUntilWed);
   document.getElementById('ns-date').value = d.toISOString().split('T')[0];
 
-  // Render chips
+  // Render chips from live REGULARS
   nsSelected = new Set(REGULARS);
-  const chips = document.getElementById('ns-chips');
-  chips.innerHTML = REGULARS.map(n=>`
-    <span class="chip on" id="chip-${n}" onclick="toggleChip('${n}')">${n}</span>
-  `).join('');
+  renderRegularChips();
 }
 
 window.toggleChip = function(name) {
-  if (nsSelected.has(name)) { nsSelected.delete(name); document.getElementById('chip-'+name).classList.remove('on'); }
-  else { nsSelected.add(name); document.getElementById('chip-'+name).classList.add('on'); }
+  if (nsSelected.has(name)) { nsSelected.delete(name); }
+  else { nsSelected.add(name); }
+  renderRegularChips();
+};
+
+function renderRegularChips() {
+  const chips = document.getElementById('ns-chips');
+  if (!chips) return;
+  chips.innerHTML = REGULARS.map(n => {
+    const on = nsSelected.has(n);
+    return `<span class="chip ${on?'on':''}" onclick="window.toggleChip('${escA(n)}')">${esc(n)}</span>`;
+  }).join('');
+}
+
+window.addDefaultPlayer = async function() {
+  const inp = document.getElementById('ns-new-player');
+  const raw = inp.value.trim();
+  if (!raw) return;
+  // Snap to canonical casing if already known
+  const lower = raw.toLowerCase();
+  const exists = REGULARS.find(r => r.toLowerCase() === lower);
+  if (exists) { toast(exists + ' is already a default player'); inp.value=''; return; }
+  REGULARS.push(raw);
+  await set(ref(db,'regulars'), REGULARS);
+  nsSelected.add(raw);
+  inp.value = '';
+  renderRegularChips();
+  toast(raw + ' added as default player');
+};
+
+window.removeDefaultPlayer = async function(name) {
+  REGULARS = REGULARS.filter(r => r !== name);
+  await set(ref(db,'regulars'), REGULARS);
+  nsSelected.delete(name);
+  renderRegularChips();
+  toast(name + ' removed from defaults');
+};
+
+window.confirmRemoveDefault = function(name) {
+  if (!confirm(`Remove ${name} from default players?\n\nThey won't be auto-added to future sessions. Past sessions are unchanged.`)) return;
+  window.removeDefaultPlayer(name).then(()=>renderPlayers());
+};
+
+window.confirmAddDefault = async function(name) {
+  if (!confirm(`Set ${name} as a default player?\n\nThey'll be auto-added to all future sessions.`)) return;
+  if (REGULARS.some(r => r.toLowerCase() === name.toLowerCase())) {
+    toast(name + ' is already a default player'); return;
+  }
+  REGULARS.push(name);
+  await set(ref(db,'regulars'), REGULARS);
+  toast(name + ' is now a default player');
+  renderPlayers();
 };
 
 window.addSession = async function() {
@@ -870,57 +929,64 @@ function renderHistory() {
 function renderPlayers() {
   const container = document.getElementById('players-list');
 
-  // Collect all unique names ever seen across all sessions
+  // Build map of all players ever seen in sessions
   const playerMap = {};
   sessions.forEach(s => {
     Object.values(s.attendees||{}).forEach(a => {
       if (!a.name) return;
-      if (!playerMap[a.name]) {
-        playerMap[a.name] = { name: a.name, sessions: 0, withdrawn: 0, paid: 0 };
-      }
-      if (!a.withdrawn) {
-        playerMap[a.name].sessions++;
-        if (a.paid) playerMap[a.name].paid++;
-      } else {
-        playerMap[a.name].withdrawn++;
-      }
+      const key = a.name.toLowerCase();
+      if (!playerMap[key]) playerMap[key] = { name: a.name, sessions: 0, withdrawn: 0 };
+      if (!a.withdrawn) playerMap[key].sessions++;
+      else playerMap[key].withdrawn++;
     });
   });
 
-  const players = Object.values(playerMap).sort((a,b) => b.sessions - a.sessions);
-  const isRegular = name => REGULARS.includes(name);
+  // Merge regulars who may not have attended any session yet
+  REGULARS.forEach(n => {
+    const key = n.toLowerCase();
+    if (!playerMap[key]) playerMap[key] = { name: n, sessions: 0, withdrawn: 0 };
+  });
 
-  if (players.length === 0) {
+  const allPlayers = Object.values(playerMap).sort((a, b) => {
+    // Regulars first, then by session count
+    const aReg = REGULARS.some(r => r.toLowerCase() === a.name.toLowerCase());
+    const bReg = REGULARS.some(r => r.toLowerCase() === b.name.toLowerCase());
+    if (aReg !== bReg) return aReg ? -1 : 1;
+    return b.sessions - a.sessions;
+  });
+
+  if (allPlayers.length === 0) {
     container.innerHTML = '<div class="empty">No players found yet.</div>';
     return;
   }
 
-  const regulars = players.filter(p => isRegular(p.name));
-  const others = players.filter(p => !isRegular(p.name));
+  const totalRegulars = allPlayers.filter(p => REGULARS.some(r => r.toLowerCase() === p.name.toLowerCase())).length;
+  const totalGuests = allPlayers.length - totalRegulars;
 
   function playerRow(p) {
-    return `<div class="arow" style="padding:8px 0">
-      <div class="av av-a">${ini(p.name)}</div>
-      <span style="font-size:13px;flex:1;color:var(--g800)">${esc(p.name)}</span>
-      <div style="display:flex;gap:6px;align-items:center">
-        ${isRegular(p.name) ? `<span class="pill pg" style="font-size:10px">Regular</span>` : ''}
-        <span style="font-size:11px;color:var(--g400)">${p.sessions} session${p.sessions!==1?'s':''}</span>
-        ${p.withdrawn > 0 ? `<span style="font-size:11px;color:var(--red)">${p.withdrawn} withdrew</span>` : ''}
+    const isReg = REGULARS.some(r => r.toLowerCase() === p.name.toLowerCase());
+    return `<div class="arow" style="padding:9px 0">
+      <div class="av ${isReg?'av-a':'av-w'}">${ini(p.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:var(--g800);font-weight:${isReg?'500':'400'}">${esc(p.name)}</div>
+        <div style="font-size:11px;color:var(--g400);margin-top:1px">
+          ${p.sessions} session${p.sessions!==1?'s':''}${p.withdrawn>0?` · <span style="color:var(--red)">${p.withdrawn} withdrew</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+        ${isReg
+          ? `<span class="pill pg" style="font-size:10px">Default</span>
+             <button class="btn btn-red btn-sm" onclick="window.confirmRemoveDefault('${escA(p.name)}')">Remove</button>`
+          : `<button class="btn btn-sm" style="color:var(--green);border-color:#a7d7ba;background:var(--green-l)" onclick="window.confirmAddDefault('${escA(p.name)}')">+ Set default</button>`
+        }
       </div>
     </div>`;
   }
 
   container.innerHTML = `
-    <div class="fcard" style="margin-bottom:10px">
-      <div style="font-size:12px;color:var(--g500);margin-bottom:12px">${players.length} players in the system · ${regulars.length} regulars · ${others.length} guests</div>
-      ${regulars.length > 0 ? `
-        <div class="slabel" style="margin-bottom:6px">Regulars (${regulars.length})</div>
-        <div class="alist" style="margin-bottom:12px">${regulars.map(playerRow).join('')}</div>
-      ` : ''}
-      ${others.length > 0 ? `
-        <div class="slabel" style="margin-bottom:6px">Guests (${others.length})</div>
-        <div class="alist">${others.map(playerRow).join('')}</div>
-      ` : ''}
+    <div class="fcard">
+      <div style="font-size:12px;color:var(--g500);margin-bottom:12px">${allPlayers.length} players · ${totalRegulars} defaults · ${totalGuests} guests</div>
+      <div class="alist">${allPlayers.map(playerRow).join('')}</div>
     </div>`;
 }
 
@@ -936,8 +1002,23 @@ window.copyLink = function() {
   navigator.clipboard.writeText(window.location.href).then(()=>toast('Link copied!')).catch(()=>toast('Copy the URL from your browser'));
 };
 window.saveName = function() {
-  const v=document.getElementById('uname').value.trim();
-  if(!v)return; user.name=v; saveUser(); toast('Name saved!'); renderMain();
+  let v = document.getElementById('uname').value.trim();
+  if (!v) return;
+  // Snap to canonical name — check regulars first, then any known attendee
+  const lower = v.toLowerCase();
+  const canonical = REGULARS.find(r => r.toLowerCase() === lower)
+    || (() => {
+      for (const s of sessions) {
+        for (const a of Object.values(s.attendees||{})) {
+          if (a.name && a.name.toLowerCase() === lower) return a.name;
+        }
+      }
+      return null;
+    })();
+  if (canonical) v = canonical;
+  user.name = v;
+  document.getElementById('uname').value = v;
+  saveUser(); toast('Name saved!'); renderMain();
 };
 window.checkPin = function() {
   const v=document.getElementById('pin-inp').value;
