@@ -225,14 +225,14 @@ svg.icon{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;str
       <h2>Add session</h2>
     </div>
     <div class="fcard">
-      <div class="frow">
-        <div class="fg">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="fg" style="flex:1;min-width:130px">
           <label class="flabel">Date</label>
           <input class="finput" type="date" id="ns-date" lang="en-AU" />
         </div>
-        <div class="fg">
+        <div class="fg" style="flex:1;min-width:160px">
           <label class="flabel">Time</label>
-          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:4px">
             <input class="finput" id="ns-time-start" placeholder="8" style="width:44px;text-align:center" value="8" />
             <span style="font-size:13px;color:var(--g500)">–</span>
             <input class="finput" id="ns-time-end" placeholder="10" style="width:44px;text-align:center" value="10" />
@@ -335,6 +335,11 @@ const ini = n => String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join(
 const fmtD = () => new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short'});
 const fmtDT = () => new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
 const dbKey = n => String(n).toLowerCase().replace(/[.#$\[\]\s]/g,'_');
+// Find the actual key used in a session's attendees object, case-insensitive
+function findAttKey(attendees, name) {
+  const lower = name.toLowerCase();
+  return Object.keys(attendees||{}).find(k => k.toLowerCase() === lower) || dbKey(name);
+}
 
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -841,7 +846,7 @@ window.saveCost = async function() {
 window.togglePaid = async function(sid, name) {
   const s = sessions.find(x=>x.id===sid);
   if (!s) return;
-  const k = dbKey(name);
+  const k = findAttKey(s.attendees, name);
   const a = (s.attendees||{})[k];
   if (!a) return;
   await update(ref(db,`sessions/${sid}/attendees/${k}`), { paid: !a.paid });
@@ -856,7 +861,8 @@ window.hostRemoveEdit = async function(name) {
 
 window.hostUndoRemove = async function(name) {
   if (!user.isHost) return;
-  const k = dbKey(name);
+  const s=sessions.find(x=>x.id===editId);
+  const k=findAttKey(s?s.attendees:{}, name);
   await update(ref(db, `sessions/${editId}/attendees/${k}`), { withdrawn: false, withdrawnAt: null });
   toast(name + ' restored');
   setTimeout(renderEditForm, 400);
@@ -1032,7 +1038,7 @@ window.joinSession = async function(id) {
   if(!user.name)return;
   const s=sessions.find(x=>x.id===id);
   if(!s)return;
-  const k=dbKey(user.name);
+  const k=findAttKey(s.attendees, user.name);
   const existing=(s.attendees||{})[k];
   if(existing&&!existing.withdrawn)return;
   // Either new join or rejoining after withdrawal
@@ -1042,14 +1048,16 @@ window.joinSession = async function(id) {
 
 window.withdraw = async function(id) {
   if(!user.name)return;
-  const k=dbKey(user.name);
+  const s=sessions.find(x=>x.id===id);
+  const k=findAttKey(s?s.attendees:{}, user.name);
   await update(ref(db,`sessions/${id}/attendees/${k}`),{withdrawn:true,withdrawnAt:'withdrew '+fmtDT()});
   toast('Withdrawal recorded');
 };
 
 window.hostRemove = async function(id,name) {
   if(!user.isHost)return;
-  const k=dbKey(name);
+  const s=sessions.find(x=>x.id===id);
+  const k=findAttKey(s?s.attendees:{}, name);
   await update(ref(db,`sessions/${id}/attendees/${k}`),{withdrawn:true,withdrawnAt:'removed by host '+fmtD()});
   toast(name+' removed');
 };
