@@ -514,7 +514,13 @@ function renderCard(s, past) {
   if (!past) {
     if (!user.name) actionArea = `<div style="font-size:12px;color:var(--g400)">Enter your name above to join.</div>`;
     else if (myEntry&&!myEntry.withdrawn) actionArea = `<div class="status-msg" style="font-size:12px;color:var(--green);font-weight:500">✓ You're confirmed</div>`;
-    else if (myEntry&&myEntry.withdrawn) actionArea = `<div style="font-size:12px;color:var(--red)">You withdrew from this session.</div>`;
+    else if (myEntry&&myEntry.withdrawn) actionArea = `<div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:12px;color:var(--red)">You previously withdrew from this session.</div>
+      <button class="btn btn-green" onclick="window.joinSession('${s.id}')">
+        <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Rejoin this session
+      </button>
+    </div>`;
     else if (isFull) actionArea = `<div style="font-size:12px;color:var(--amber)">Session is full.</div>`;
     else actionArea = `<button class="btn btn-green" onclick="window.joinSession('${s.id}')">
       <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -621,7 +627,10 @@ function renderEditForm() {
     <div class="arow">
       <div class="av av-w">${ini(a.name)}</div>
       <span class="aname wd">${esc(a.name)}</span>
-      <span class="wtag">${esc(a.withdrawnAt||'withdrew')}</span>
+      <span class="wtag" style="flex:1">${esc(a.withdrawnAt||'withdrew')}</span>
+      ${(a.withdrawnAt||'').startsWith('removed by host')
+        ? `<button class="btn btn-sm" style="color:var(--blue);border-color:#bfdbfe;background:var(--blue-l);flex-shrink:0" onclick="window.hostUndoRemove('${escA(a.name)}')">Undo</button>`
+        : ''}
     </div>`).join('');
 
   document.getElementById('edit-form-wrap').innerHTML = `
@@ -768,6 +777,14 @@ window.hostRemoveEdit = async function(name) {
   setTimeout(renderEditForm, 400);
 };
 
+window.hostUndoRemove = async function(name) {
+  if (!user.isHost) return;
+  const k = dbKey(name);
+  await update(ref(db, `sessions/${editId}/attendees/${k}`), { withdrawn: false, withdrawnAt: null });
+  toast(name + ' restored');
+  setTimeout(renderEditForm, 400);
+};
+
 window.saveEdit = async function() {
   const s = sessions.find(x=>x.id===editId);
   if (!s) return;
@@ -859,8 +876,10 @@ window.joinSession = async function(id) {
   const s=sessions.find(x=>x.id===id);
   if(!s)return;
   const k=dbKey(user.name);
-  if((s.attendees||{})[k])return;
-  await set(ref(db,`sessions/${id}/attendees/${k}`),{name:user.name,joinedAt:fmtD(),withdrawn:false,withdrawnAt:null,paid:false});
+  const existing=(s.attendees||{})[k];
+  if(existing&&!existing.withdrawn)return;
+  // Either new join or rejoining after withdrawal
+  await update(ref(db,`sessions/${id}/attendees/${k}`),{name:user.name,joinedAt:fmtD(),withdrawn:false,withdrawnAt:null,paid:false});
   openCards[id]=true; toast("You're in! See you on court 🏸");
 };
 
