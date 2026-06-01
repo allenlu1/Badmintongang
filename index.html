@@ -220,16 +220,19 @@ svg.icon{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;str
       <div class="frow">
         <div class="fg">
           <label class="flabel">Date</label>
-          <input class="finput" type="date" id="ns-date" />
+          <input class="finput" type="date" id="ns-date" lang="en-AU" />
         </div>
         <div class="fg">
           <label class="flabel">Time</label>
-          <select class="finput" id="ns-time">
-            <option value="8:00–10:00 PM" selected>8:00–10:00 PM</option>
-            <option value="7:00–9:00 PM">7:00–9:00 PM</option>
-            <option value="9:00–11:00 PM">9:00–11:00 PM</option>
-            <option value="6:00–8:00 PM">6:00–8:00 PM</option>
-          </select>
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+            <input class="finput" id="ns-time-start" placeholder="8" style="width:44px;text-align:center" value="8" />
+            <span style="font-size:13px;color:var(--g500)">–</span>
+            <input class="finput" id="ns-time-end" placeholder="10" style="width:44px;text-align:center" value="10" />
+            <select class="finput" id="ns-time-ampm" style="width:60px;padding-left:4px">
+              <option value="PM" selected>PM</option>
+              <option value="AM">AM</option>
+            </select>
+          </div>
         </div>
       </div>
       <div class="fg">
@@ -297,8 +300,6 @@ const PIN = 'smash2026';
 const UKEY = 'nbc_user_v2';
 const REGULARS = ['Jason','Vivian','Andy','Raymond','Cindy','Allen','Ken','Vince','Jimmy','Astrid'];
 const COURT_FEE = 136;
-const SHUTTLE_UNIT_COST = 19;
-const SHUTTLE_UNIT_QTY = 6;
 
 let sessions = [];
 let user = { name:'', isHost:false };
@@ -362,7 +363,7 @@ function getDefaultSessions() {
     const id = 'wed_' + iso.replace(/-/g,'');
     const att = {};
     REGULARS.forEach(n => { att[dbKey(n)] = {name:n,joinedAt:'default',withdrawn:false,withdrawnAt:null,paid:false}; });
-    sessions.push({ id, dateISO: iso, time:'8:00–10:00 PM', venue:'NBC Granville', courts:'Court 1 & 2', maxPlayers:12, courtFee:COURT_FEE, shuttlesUsed:null, shuttleCostPerUnit:SHUTTLE_UNIT_COST, shuttleUnitQty:SHUTTLE_UNIT_QTY, attendees:att });
+    sessions.push({ id, dateISO: iso, time:'8:00–10:00 PM', venue:'NBC Granville', courts:'Court 1 & 2', maxPlayers:12, courtFee:COURT_FEE, shuttlesUsed:null, shuttleTotalCost:null, attendees:att });
     d.setDate(d.getDate() + 7);
   }
   return sessions;
@@ -459,9 +460,7 @@ function renderCard(s, past) {
   // cost calculation
   const courtFee = s.courtFee||COURT_FEE;
   const shuttles = s.shuttlesUsed != null ? s.shuttlesUsed : null;
-  const costPerUnit = s.shuttleCostPerUnit||SHUTTLE_UNIT_COST;
-  const unitQty = s.shuttleUnitQty||SHUTTLE_UNIT_QTY;
-  const shuttleCost = shuttles != null ? (shuttles / unitQty) * costPerUnit : null;
+  const shuttleCost = s.shuttleTotalCost != null ? s.shuttleTotalCost : null;
   const totalCost = shuttleCost != null ? courtFee + shuttleCost : null;
   const perHead = totalCost != null && active.length > 0 ? totalCost / active.length : null;
 
@@ -490,16 +489,24 @@ function renderCard(s, past) {
   let costBox = '';
   if (totalCost != null && active.length > 0) {
     costBox = `<div class="cost-box">
-      <div style="margin-bottom:8px">
-        <div style="font-size:12px;color:var(--green);opacity:.8;margin-bottom:2px">Each person pays</div>
-        <div class="cost-main">$${perHead.toFixed(2)}</div>
+      <div style="font-size:12px;color:var(--green);opacity:.8;margin-bottom:4px">Cost breakdown</div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--green)">
+          <span>Court fee</span><span>$${courtFee.toFixed(2)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--green)">
+          <span>Shuttlecocks${shuttles!=null?' ('+shuttles+'x)':''}</span><span>$${shuttleCost.toFixed(2)}</span>
+        </div>
+        <div style="height:1px;background:rgba(26,107,60,.2);margin:2px 0"></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--green);font-weight:600">
+          <span>Total</span><span>$${totalCost.toFixed(2)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--green);opacity:.7">
+          <span>÷ ${active.length} players</span><span></span>
+        </div>
       </div>
-      <div class="cost-breakdown">
-        <div class="cb-item"><div class="cb-label">Court fee</div><div class="cb-val">$${courtFee.toFixed(2)}</div></div>
-        <div class="cb-item"><div class="cb-label">Shuttles (${shuttles})</div><div class="cb-val">$${shuttleCost.toFixed(2)}</div></div>
-        <div class="cb-item"><div class="cb-label">Total</div><div class="cb-val">$${totalCost.toFixed(2)}</div></div>
-        <div class="cb-item"><div class="cb-label">Players</div><div class="cb-val">${active.length}</div></div>
-      </div>
+      <div style="font-size:12px;color:var(--green);opacity:.8;margin-bottom:2px">Each person pays</div>
+      <div class="cost-main">$${perHead.toFixed(2)}</div>
     </div>`;
   }
 
@@ -562,7 +569,10 @@ window.toggleChip = function(name) {
 
 window.addSession = async function() {
   const dateISO = document.getElementById('ns-date').value;
-  const time = document.getElementById('ns-time').value;
+  const tsStart = document.getElementById('ns-time-start').value.trim()||'8';
+  const tsEnd = document.getElementById('ns-time-end').value.trim()||'10';
+  const tsAmpm = document.getElementById('ns-time-ampm').value;
+  const time = `${tsStart}:00–${tsEnd}:00 ${tsAmpm}`;
   const venue = document.getElementById('ns-venue').value.trim()||'NBC Granville';
   const courts = document.getElementById('ns-courts').value.trim()||'Court 1 & 2';
   const max = parseInt(document.getElementById('ns-max').value)||12;
@@ -570,7 +580,7 @@ window.addSession = async function() {
   const id = 'ses_' + dateISO.replace(/-/g,'') + '_' + Date.now();
   const att = {};
   nsSelected.forEach(n => { att[dbKey(n)] = {name:n,joinedAt:'default',withdrawn:false,withdrawnAt:null,paid:false}; });
-  await set(ref(db,`sessions/${id}`), { id, dateISO, time, venue, courts, maxPlayers:max, courtFee:COURT_FEE, shuttlesUsed:null, shuttleCostPerUnit:SHUTTLE_UNIT_COST, shuttleUnitQty:SHUTTLE_UNIT_QTY, attendees:att });
+  await set(ref(db,`sessions/${id}`), { id, dateISO, time, venue, courts, maxPlayers:max, courtFee:COURT_FEE, shuttlesUsed:null, shuttleTotalCost:null, attendees:att });
   showView('main');
   toast('Session added!');
 };
@@ -589,9 +599,7 @@ function renderEditForm() {
 
   const courtFee = s.courtFee||COURT_FEE;
   const shuttles = s.shuttlesUsed;
-  const costPerUnit = s.shuttleCostPerUnit||SHUTTLE_UNIT_COST;
-  const unitQty = s.shuttleUnitQty||SHUTTLE_UNIT_QTY;
-  const shuttleCost = shuttles!=null ? (shuttles/unitQty)*costPerUnit : null;
+  const shuttleCost = s.shuttleTotalCost!=null ? s.shuttleTotalCost : null;
   const totalCost = shuttleCost!=null ? courtFee+shuttleCost : null;
   const perHead = totalCost!=null&&active.length>0 ? totalCost/active.length : null;
 
@@ -620,14 +628,17 @@ function renderEditForm() {
     <div class="fcard">
       <div class="slabel" style="margin-bottom:10px">Session details</div>
       <div class="frow">
-        <div class="fg"><label class="flabel">Date</label><input class="finput" type="date" id="ed-date" value="${esc(s.dateISO||'')}" /></div>
+        <div class="fg"><label class="flabel">Date</label><input class="finput" type="date" lang="en-AU" id="ed-date" value="${esc(s.dateISO||'')}" /></div>
         <div class="fg"><label class="flabel">Time</label>
-          <select class="finput" id="ed-time">
-            <option ${s.time==='8:00–10:00 PM'?'selected':''}>8:00–10:00 PM</option>
-            <option ${s.time==='7:00–9:00 PM'?'selected':''}>7:00–9:00 PM</option>
-            <option ${s.time==='9:00–11:00 PM'?'selected':''}>9:00–11:00 PM</option>
-            <option ${s.time==='6:00–8:00 PM'?'selected':''}>6:00–8:00 PM</option>
-          </select>
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+            <input class="finput" id="ed-time-start" placeholder="8" style="width:44px;text-align:center" value="${esc((s.time||'8:00–10:00 PM').split(':')[0])}" />
+            <span style="font-size:13px;color:var(--g500)">–</span>
+            <input class="finput" id="ed-time-end" placeholder="10" style="width:44px;text-align:center" value="${esc((s.time||'').split('–')[1]?.split(':')[0]||'10')}" />
+            <select class="finput" id="ed-time-ampm" style="width:60px;padding-left:4px">
+              <option value="PM" ${(s.time||'').includes('AM')?'':'selected'}>PM</option>
+              <option value="AM" ${(s.time||'').includes('AM')?'selected':''}>AM</option>
+            </select>
+          </div>
         </div>
       </div>
       <div class="fg"><label class="flabel">Venue</label><input class="finput" id="ed-venue" value="${esc(s.venue)}" /></div>
@@ -647,12 +658,11 @@ function renderEditForm() {
         <div class="shuttle-row">
           <input class="finput" id="ed-shuttles" type="number" min="0" placeholder="e.g. 6" value="${shuttles!=null?shuttles:''}" style="width:80px" oninput="window.previewCost()" />
           <span style="font-size:13px;color:var(--g500)">shuttles</span>
-          <span style="font-size:12px;color:var(--g400)">×</span>
-          <input class="finput" id="ed-shuttle-cost" type="number" min="0" step="0.01" value="${costPerUnit}" style="width:70px" oninput="window.previewCost()" />
-          <span style="font-size:13px;color:var(--g500)">per</span>
-          <input class="finput" id="ed-shuttle-qty" type="number" min="1" value="${unitQty}" style="width:60px" oninput="window.previewCost()" />
         </div>
-        <div style="font-size:11px;color:var(--g400);margin-top:4px">e.g. 6 shuttles used, $19 per pack of 6</div>
+      </div>
+      <div class="fg">
+        <label class="flabel">Shuttle total cost ($)</label>
+        <input class="finput" id="ed-shuttle-total" type="number" min="0" step="0.01" placeholder="e.g. 19.00" value="${s.shuttleTotalCost!=null?s.shuttleTotalCost:''}" style="width:120px" oninput="window.previewCost()" />
       </div>
       <div id="cost-preview" style="margin-top:8px">${perHead!=null?renderCostPreview(courtFee,shuttles,shuttleCost,totalCost,perHead,active.length):''}</div>
       <button class="btn btn-solid btn-full" onclick="window.saveCost()" style="margin-top:10px">Update cost</button>
@@ -679,16 +689,24 @@ function renderEditForm() {
 
 function renderCostPreview(cf, shuttles, sc, total, perHead, players) {
   return `<div class="cost-box">
-    <div style="margin-bottom:8px">
-      <div style="font-size:12px;color:var(--green);opacity:.8;margin-bottom:2px">Each person pays</div>
-      <div class="cost-main">$${perHead.toFixed(2)}</div>
+    <div style="font-size:12px;color:var(--green);opacity:.8;margin-bottom:4px">Cost breakdown</div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--green)">
+        <span>Court fee</span><span>$${Number(cf).toFixed(2)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--green)">
+        <span>Shuttlecocks${shuttles!=null?' ('+shuttles+'x)':''}</span><span>$${Number(sc).toFixed(2)}</span>
+      </div>
+      <div style="height:1px;background:rgba(26,107,60,.2);margin:2px 0"></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--green);font-weight:600">
+        <span>Total</span><span>$${Number(total).toFixed(2)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--green);opacity:.7">
+        <span>÷ ${players} players</span><span></span>
+      </div>
     </div>
-    <div class="cost-breakdown">
-      <div class="cb-item"><div class="cb-label">Court fee</div><div class="cb-val">$${Number(cf).toFixed(2)}</div></div>
-      <div class="cb-item"><div class="cb-label">Shuttles (${shuttles})</div><div class="cb-val">$${sc.toFixed(2)}</div></div>
-      <div class="cb-item"><div class="cb-label">Total</div><div class="cb-val">$${total.toFixed(2)}</div></div>
-      <div class="cb-item"><div class="cb-label">Players</div><div class="cb-val">${players}</div></div>
-    </div>
+    <div style="font-size:12px;color:var(--green);opacity:.8;margin-bottom:2px">Each person pays</div>
+    <div class="cost-main">$${perHead.toFixed(2)}</div>
   </div>`;
 }
 
@@ -696,23 +714,24 @@ window.previewCost = function() {
   const s = sessions.find(x=>x.id===editId);
   if (!s) return;
   const cf = parseFloat(document.getElementById('ed-court-fee').value)||COURT_FEE;
-  const shuttles = parseFloat(document.getElementById('ed-shuttles').value);
-  const costPerUnit = parseFloat(document.getElementById('ed-shuttle-cost').value)||SHUTTLE_UNIT_COST;
-  const unitQty = parseFloat(document.getElementById('ed-shuttle-qty').value)||SHUTTLE_UNIT_QTY;
-  if (isNaN(shuttles)) { document.getElementById('cost-preview').innerHTML=''; return; }
+  const shuttles = document.getElementById('ed-shuttles').value;
+  const sc = parseFloat(document.getElementById('ed-shuttle-total').value);
+  if (isNaN(sc)) { document.getElementById('cost-preview').innerHTML=''; return; }
   const active = Object.values(s.attendees||{}).filter(a=>!a.withdrawn);
-  const sc = (shuttles/unitQty)*costPerUnit;
-  const total = cf+sc;
+  const total = cf + sc;
   const perHead = active.length>0 ? total/active.length : null;
-  document.getElementById('cost-preview').innerHTML = perHead!=null ? renderCostPreview(cf,shuttles,sc,total,perHead,active.length) : '';
+  document.getElementById('cost-preview').innerHTML = perHead!=null ? renderCostPreview(cf, shuttles||null, sc, total, perHead, active.length) : '';
 };
 
 window.saveEdit = async function() {
   const s = sessions.find(x=>x.id===editId);
   if (!s) return;
+  const tStart = document.getElementById('ed-time-start').value.trim()||'8';
+  const tEnd = document.getElementById('ed-time-end').value.trim()||'10';
+  const tAmpm = document.getElementById('ed-time-ampm').value;
   await update(ref(db,`sessions/${editId}`), {
     dateISO: document.getElementById('ed-date').value || s.dateISO,
-    time: document.getElementById('ed-time').value,
+    time: `${tStart}:00–${tEnd}:00 ${tAmpm}`,
     venue: document.getElementById('ed-venue').value.trim()||s.venue,
     courts: document.getElementById('ed-courts').value.trim()||s.courts,
     maxPlayers: parseInt(document.getElementById('ed-max').value)||12,
@@ -724,9 +743,9 @@ window.saveCost = async function() {
   const cf = parseFloat(document.getElementById('ed-court-fee').value)||COURT_FEE;
   const sv = document.getElementById('ed-shuttles').value;
   const shuttles = sv!==''?parseFloat(sv):null;
-  const costPerUnit = parseFloat(document.getElementById('ed-shuttle-cost').value)||SHUTTLE_UNIT_COST;
-  const unitQty = parseFloat(document.getElementById('ed-shuttle-qty').value)||SHUTTLE_UNIT_QTY;
-  await update(ref(db,`sessions/${editId}`), { courtFee:cf, shuttlesUsed:shuttles, shuttleCostPerUnit:costPerUnit, shuttleUnitQty:unitQty });
+  const stv = document.getElementById('ed-shuttle-total').value;
+  const shuttleTotalCost = stv!==''?parseFloat(stv):null;
+  await update(ref(db,`sessions/${editId}`), { courtFee:cf, shuttlesUsed:shuttles, shuttleTotalCost });
   toast('Cost updated!');
 };
 
@@ -748,9 +767,12 @@ window.hostRemoveEdit = async function(name) {
 window.saveEdit = async function() {
   const s = sessions.find(x=>x.id===editId);
   if (!s) return;
+  const tStart = document.getElementById('ed-time-start').value.trim()||'8';
+  const tEnd = document.getElementById('ed-time-end').value.trim()||'10';
+  const tAmpm = document.getElementById('ed-time-ampm').value;
   await update(ref(db,`sessions/${editId}`), {
     dateISO: document.getElementById('ed-date').value || s.dateISO,
-    time: document.getElementById('ed-time').value,
+    time: `${tStart}:00–${tEnd}:00 ${tAmpm}`,
     venue: document.getElementById('ed-venue').value.trim()||s.venue,
     courts: document.getElementById('ed-courts').value.trim()||s.courts,
     maxPlayers: parseInt(document.getElementById('ed-max').value)||12,
@@ -776,9 +798,7 @@ function renderHistory() {
     const paid = active.filter(a=>a.paid).length;
     const cf = s.courtFee||COURT_FEE;
     const shuttles = s.shuttlesUsed;
-    const costPerUnit = s.shuttleCostPerUnit||SHUTTLE_UNIT_COST;
-    const unitQty = s.shuttleUnitQty||SHUTTLE_UNIT_QTY;
-    const sc = shuttles!=null?(shuttles/unitQty)*costPerUnit:null;
+    const sc = s.shuttleTotalCost!=null ? s.shuttleTotalCost : null;
     const total = sc!=null?cf+sc:null;
     const perHead = total!=null&&active.length>0?total/active.length:null;
     return `<div class="fcard" style="margin-bottom:10px">
