@@ -381,7 +381,7 @@ function getDefaultSessions() {
     const id = 'wed_' + iso.replace(/-/g,'');
     const att = {};
     REGULARS.forEach(n => { att[dbKey(n)] = {name:n,joinedAt:'default',withdrawn:false,withdrawnAt:null,paid:false}; });
-    sessions.push({ id, dateISO: iso, time:'8:00–10:00 PM', venue:'NBC Granville', courts:'Court 1 & 2', maxPlayers:12, courtFee:COURT_FEE, shuttlesUsed:null, shuttleTotalCost:null, attendees:att });
+    sessions.push({ id, dateISO: iso, time:'8:00–10:00 PM', venue:'NBC Granville', courts:'Court 1 & 2', maxPlayers:16, courtFee:COURT_FEE, shuttlesUsed:null, shuttleTotalCost:null, attendees:att });
     d.setDate(d.getDate() + 7);
   }
   return sessions;
@@ -481,7 +481,7 @@ function renderCard(s, past) {
   const atts = Object.values(s.attendees||{});
   const active = atts.filter(a=>!a.withdrawn);
   const withdrawn = atts.filter(a=>a.withdrawn);
-  const max = s.maxPlayers||12;
+  const max = s.maxPlayers||16;
   const isFull = active.length>=max;
   const isOpen = openCards[s.id];
   const myEntry = user.name ? atts.find(a=>a.name.toLowerCase()===user.name.toLowerCase()) : null;
@@ -657,7 +657,7 @@ window.addSession = async function() {
   const time = `${tsStart}:00–${tsEnd}:00 ${tsAmpm}`;
   const venue = document.getElementById('ns-venue').value.trim()||'NBC Granville';
   const courts = document.getElementById('ns-courts').value.trim()||'Court 1 & 2';
-  const max = parseInt(document.getElementById('ns-max').value)||12;
+  const max = parseInt(document.getElementById('ns-max').value)||16;
   if (!dateISO) { toast('Please select a date'); return; }
   const id = 'ses_' + dateISO.replace(/-/g,'') + '_' + Date.now();
   const att = {};
@@ -712,10 +712,10 @@ function renderEditForm() {
   document.getElementById('edit-form-wrap').innerHTML = `
     <div class="fcard">
       <div class="slabel" style="margin-bottom:10px">Session details</div>
-      <div class="frow">
-        <div class="fg"><label class="flabel">Date</label><input class="finput" type="date" lang="en-AU" id="ed-date" value="${esc(s.dateISO||'')}" /></div>
-        <div class="fg"><label class="flabel">Time</label>
-          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="fg" style="flex:1;min-width:130px"><label class="flabel">Date</label><input class="finput" type="date" lang="en-AU" id="ed-date" value="${esc(s.dateISO||'')}" /></div>
+        <div class="fg" style="flex:1;min-width:160px"><label class="flabel">Time</label>
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:nowrap">
             <input class="finput" id="ed-time-start" placeholder="8" style="width:44px;text-align:center" value="${esc((s.time||'8:00–10:00 PM').split(':')[0])}" />
             <span style="font-size:13px;color:var(--g500)">–</span>
             <input class="finput" id="ed-time-end" placeholder="10" style="width:44px;text-align:center" value="${esc((s.time||'').split('–')[1]?.split(':')[0]||'10')}" />
@@ -728,7 +728,7 @@ function renderEditForm() {
       </div>
       <div class="fg"><label class="flabel">Venue</label><input class="finput" id="ed-venue" value="${esc(s.venue)}" /></div>
       <div class="fg"><label class="flabel">Courts</label><input class="finput" id="ed-courts" value="${esc(s.courts)}" /></div>
-      <div class="fg"><label class="flabel">Max players</label><input class="finput" id="ed-max" type="number" value="${s.maxPlayers||12}" min="1" max="40" style="width:100px" /></div>
+      <div class="fg"><label class="flabel">Max players</label><input class="finput" id="ed-max" type="number" value="${s.maxPlayers||16}" min="1" max="40" style="width:100px" /></div>
       <button class="btn btn-solid btn-full" onclick="window.saveEdit()">Save changes</button>
     </div>
 
@@ -823,7 +823,7 @@ window.saveEdit = async function() {
     time: `${tStart}:00–${tEnd}:00 ${tAmpm}`,
     venue: document.getElementById('ed-venue').value.trim()||s.venue,
     courts: document.getElementById('ed-courts').value.trim()||s.courts,
-    maxPlayers: parseInt(document.getElementById('ed-max').value)||12,
+    maxPlayers: parseInt(document.getElementById('ed-max').value)||16,
   });
   toast('Session updated!');
 };
@@ -846,6 +846,7 @@ window.togglePaid = async function(sid, name) {
   if (!a) return;
   await update(ref(db,`sessions/${sid}/attendees/${k}`), { paid: !a.paid });
   toast(name + (a.paid?' marked unpaid':' marked paid ✓'));
+  setTimeout(renderEditForm, 400);
 };
 
 window.hostRemoveEdit = async function(name) {
@@ -872,7 +873,7 @@ window.saveEdit = async function() {
     time: `${tStart}:00–${tEnd}:00 ${tAmpm}`,
     venue: document.getElementById('ed-venue').value.trim()||s.venue,
     courts: document.getElementById('ed-courts').value.trim()||s.courts,
-    maxPlayers: parseInt(document.getElementById('ed-max').value)||12,
+    maxPlayers: parseInt(document.getElementById('ed-max').value)||16,
   });
   toast('Session updated!');
 };
@@ -1066,9 +1067,8 @@ window.sharePayment = function(id) {
   const perHead = total!=null&&active.length>0 ? total/active.length : null;
   if (!perHead) { toast('Set the cost first before sharing'); return; }
 
-  const names = active.map(a=>a.name).join(', ');
   const msg =
-`NBC Granville Badminton
+`Badminton Gang
 ${fmtDateDisplay(s.dateISO)}
 
 Cost breakdown
@@ -1086,40 +1086,40 @@ Name: I-Wei Lu
 
 Please like the post once you've made the payment. Thx`;
 
-  // Try Web Share API first (mobile), fall back to clipboard
-  if (navigator.share) {
-    navigator.share({ text: msg }).catch(()=>{});
-  } else {
-    navigator.clipboard.writeText(msg)
-      .then(()=>toast('Payment message copied! Paste into WhatsApp or LINE'))
-      .catch(()=>{
-        // Last resort: show in a textarea for manual copy
-        showShareModal(msg);
-      });
-  }
+  showShareModal(msg);
 };
 
 function showShareModal(msg) {
-  // Remove existing modal if any
   const existing = document.getElementById('share-modal-wrap');
   if (existing) existing.remove();
 
   const wrap = document.createElement('div');
   wrap.id = 'share-modal-wrap';
   wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:flex;align-items:flex-end;justify-content:center;padding:1rem';
+  const canShare = !!navigator.share;
   wrap.innerHTML = `
-    <div style="background:white;border-radius:var(--rl);padding:1.25rem;width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;gap:10px">
+    <div style="background:white;border-radius:var(--rl);padding:1.25rem;width:100%;max-width:520px;display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:14px;font-weight:600">Payment message</span>
+        <div>
+          <span style="font-size:14px;font-weight:600">Payment message</span>
+          <div style="font-size:11px;color:var(--g400);margin-top:2px">Edit before sending if needed</div>
+        </div>
         <button class="btn btn-sm" onclick="document.getElementById('share-modal-wrap').remove()">Close</button>
       </div>
-      <textarea id="share-ta" style="font-family:var(--mono);font-size:12px;line-height:1.6;padding:10px;border:1px solid var(--g200);border-radius:7px;flex:1;min-height:280px;resize:none;color:var(--g800);background:var(--g50)">${msg.replace(/</g,'&lt;')}</textarea>
-      <button class="btn btn-solid" style="width:100%;justify-content:center" onclick="
-        document.getElementById('share-ta').select();
-        document.execCommand('copy');
-        toast('Copied! Paste into WhatsApp or LINE');
-        document.getElementById('share-modal-wrap').remove();
-      ">Copy all text</button>
+      <textarea id="share-ta" style="font-family:var(--mono);font-size:12px;line-height:1.7;padding:10px;border:1px solid var(--g200);border-radius:7px;height:280px;resize:none;color:var(--g800);background:var(--g50);width:100%">${msg.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
+      <div style="display:flex;gap:8px">
+        ${canShare ? `<button class="btn btn-solid" style="flex:1;justify-content:center" onclick="
+          const t=document.getElementById('share-ta').value;
+          document.getElementById('share-modal-wrap').remove();
+          navigator.share({text:t}).catch(()=>{});
+        "><svg class='icon' viewBox='0 0 24 24'><circle cx='18' cy='5' r='3'/><circle cx='6' cy='12' r='3'/><circle cx='18' cy='19' r='3'/><line x1='8.59' y1='13.51' x2='15.42' y2='17.49'/><line x1='15.41' y1='6.51' x2='8.59' y2='10.49'/></svg> Share</button>` : ''}
+        <button class="btn ${canShare?'':'btn-solid'}" style="flex:1;justify-content:center" onclick="
+          const ta=document.getElementById('share-ta');
+          navigator.clipboard.writeText(ta.value).then(()=>{}).catch(()=>{ta.select();document.execCommand('copy');});
+          toast('Copied! Paste into WhatsApp or LINE');
+          document.getElementById('share-modal-wrap').remove();
+        "><svg class='icon' viewBox='0 0 24 24'><rect x='9' y='9' width='13' height='13' rx='2' ry='2'/><path d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'/></svg> Copy all</button>
+      </div>
     </div>`;
   document.body.appendChild(wrap);
 }
