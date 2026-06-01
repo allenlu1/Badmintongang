@@ -666,6 +666,10 @@ function renderEditForm() {
       </div>
       <div id="cost-preview" style="margin-top:8px">${perHead!=null?renderCostPreview(courtFee,shuttles,shuttleCost,totalCost,perHead,active.length):''}</div>
       <button class="btn btn-solid btn-full" onclick="window.saveCost()" style="margin-top:10px">Update cost</button>
+      ${totalCost!=null&&active.length>0?`<button class="btn btn-green btn-full" onclick="window.sharePayment('${s.id}')" style="margin-top:6px">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        Share payment message
+      </button>`:''}
     </div>
 
     ${active.length>0||withdrawn.length>0?`
@@ -789,9 +793,13 @@ window.deleteSession = async function() {
 
 // ── history view ──────────────────────────────────────────────────────────────
 function renderHistory() {
-  const past = sessions.filter(s=>isPast(s.dateISO)).slice().reverse();
+  const sixMonthsAgo = new Date(); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  const past = sessions.filter(s => {
+    if (!isPast(s.dateISO)) return false;
+    return new Date(s.dateISO + 'T00:00:00') >= sixMonthsAgo;
+  }).slice().reverse();
   const container = document.getElementById('history-list');
-  if (past.length===0) { container.innerHTML='<div class="empty">No past sessions yet.</div>'; return; }
+  if (past.length===0) { container.innerHTML='<div class="empty">No past sessions in the last 6 months.</div>'; return; }
   container.innerHTML = past.map(s=>{
     const atts = Object.values(s.attendees||{});
     const active = atts.filter(a=>!a.withdrawn);
@@ -813,9 +821,13 @@ function renderHistory() {
         </div>
       </div>
       <div style="font-size:12px;color:var(--g500);margin-bottom:8px">${active.length} players · ${paid}/${active.length} paid${total!=null?' · Total $'+total.toFixed(2):''}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px">
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:${total!=null?'10':'0'}px">
         ${active.map(a=>`<span style="font-size:12px;padding:3px 8px;border-radius:99px;background:${a.paid?'#dcfce7':'var(--g100)'};color:${a.paid?'#15803d':'var(--g600)'};">${esc(a.name)}${a.paid?' ✓':''}</span>`).join('')}
       </div>
+      ${total!=null&&active.length>0?`<button class="btn btn-green btn-sm" onclick="window.sharePayment('${s.id}')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        Share payment message
+      </button>`:''}
     </div>`;
   }).join('');
 }
@@ -865,6 +877,77 @@ window.hostRemove = async function(id,name) {
   await update(ref(db,`sessions/${id}/attendees/${k}`),{withdrawn:true,withdrawnAt:'removed by host '+fmtD()});
   toast(name+' removed');
 };
+
+// ── share payment message ─────────────────────────────────────────────────────
+window.sharePayment = function(id) {
+  const s = sessions.find(x=>x.id===id);
+  if (!s) return;
+  const atts = Object.values(s.attendees||{});
+  const active = atts.filter(a=>!a.withdrawn);
+  const cf = s.courtFee||COURT_FEE;
+  const shuttles = s.shuttlesUsed;
+  const sc = s.shuttleTotalCost!=null ? s.shuttleTotalCost : null;
+  const total = sc!=null ? cf+sc : null;
+  const perHead = total!=null&&active.length>0 ? total/active.length : null;
+  if (!perHead) { toast('Set the cost first before sharing'); return; }
+
+  const names = active.map(a=>a.name).join(', ');
+  const msg =
+`NBC Granville Badminton
+${fmtDateDisplay(s.dateISO)}
+
+Cost breakdown
+Court fee:        $${cf.toFixed(2)}
+Shuttlecocks${shuttles!=null?' ('+shuttles+'x)':''}:   $${sc.toFixed(2)}
+─────────────────
+Total:            $${total.toFixed(2)}
+
+Each person pays: $${perHead.toFixed(2)}
+
+Bank transfer
+BSB: 112-879
+Acc: 477398765
+Name: I-Wei Lu
+
+Please like the post once you've made the payment. Thx`;
+
+  // Try Web Share API first (mobile), fall back to clipboard
+  if (navigator.share) {
+    navigator.share({ text: msg }).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(msg)
+      .then(()=>toast('Payment message copied! Paste into WhatsApp or LINE'))
+      .catch(()=>{
+        // Last resort: show in a textarea for manual copy
+        showShareModal(msg);
+      });
+  }
+};
+
+function showShareModal(msg) {
+  // Remove existing modal if any
+  const existing = document.getElementById('share-modal-wrap');
+  if (existing) existing.remove();
+
+  const wrap = document.createElement('div');
+  wrap.id = 'share-modal-wrap';
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:flex;align-items:flex-end;justify-content:center;padding:1rem';
+  wrap.innerHTML = `
+    <div style="background:white;border-radius:var(--rl);padding:1.25rem;width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:14px;font-weight:600">Payment message</span>
+        <button class="btn btn-sm" onclick="document.getElementById('share-modal-wrap').remove()">Close</button>
+      </div>
+      <textarea id="share-ta" style="font-family:var(--mono);font-size:12px;line-height:1.6;padding:10px;border:1px solid var(--g200);border-radius:7px;flex:1;min-height:280px;resize:none;color:var(--g800);background:var(--g50)">${msg.replace(/</g,'&lt;')}</textarea>
+      <button class="btn btn-solid" style="width:100%;justify-content:center" onclick="
+        document.getElementById('share-ta').select();
+        document.execCommand('copy');
+        toast('Copied! Paste into WhatsApp or LINE');
+        document.getElementById('share-modal-wrap').remove();
+      ">Copy all text</button>
+    </div>`;
+  document.body.appendChild(wrap);
+}
 
 // ── boot ──────────────────────────────────────────────────────────────────────
 user = loadUser();
