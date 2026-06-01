@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NBC Granville Badminton</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --green: #1a6b3c;
+  --green-light: #e6f4ec;
+  --green-mid: #2d8a52;
+  --amber: #92400e;
+  --amber-light: #fef3c7;
+  --red: #991b1b;
+  --red-light: #fee2e2;
+  --blue: #1e40af;
+  --blue-light: #dbeafe;
+  --purple: #5b21b6;
+  --purple-light: #ede9fe;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--gray-50);
+  color: var(--gray-800);
+  min-height: 100vh;
+  padding-bottom: 3rem;
+}
+
+/* Header */
+.app-header {
+  background: var(--green);
+  color: white;
+  padding: 1rem 1.25rem 0.875rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.app-header h1 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.app-header .sub {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.host-badge {
+  font-size: 11px;
+  background: rgba(255,255,255,0.2);
+  padding: 3px 9px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+/* Main container */
+.container { max-width: 520px; margin: 0 auto; padding: 1rem 1rem 0; }
+
+/* User bar */
+.user-bar {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.user-bar label { font-size: 13px; color: var(--gray-500); white-space: nowrap; }
+.user-bar input {
+  flex: 1;
+  min-width: 120px;
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 5px 9px;
+  border: 1px solid var(--gray-200);
+  border-radius: 7px;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  outline: none;
+}
+.user-bar input:focus { border-color: var(--green-mid); background: white; }
+
+/* Buttons */
+.btn {
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--gray-200);
+  background: white;
+  color: var(--gray-700);
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.1s, border-color 0.1s;
+}
+.btn:hover { background: var(--gray-50); border-color: var(--gray-300); }
+.btn:active { transform: scale(0.98); }
+.btn-green { border-color: #a7d7ba; color: var(--green); background: var(--green-light); }
+.btn-green:hover { background: #d1ead9; }
+.btn-red { border-color: #fca5a5; color: var(--red); background: var(--red-light); }
+.btn-red:hover { background: #fecaca; }
+.btn-purple { border-color: #c4b5fd; color: var(--purple); background: var(--purple-light); }
+.btn-purple:hover { background: #ddd6fe; }
+.btn-solid {
+  background: var(--green);
+  color: white;
+  border-color: var(--green);
+  font-weight: 500;
+}
+.btn-solid:hover { background: var(--green-mid); border-color: var(--green-mid); }
+.btn-sm { font-size: 11px; padding: 3px 8px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 1rem; }
+.tab {
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 5px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--gray-200);
+  background: white;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tab:hover { color: var(--gray-700); }
+.tab.active {
+  background: var(--gray-800);
+  color: white;
+  border-color: var(--gray-800);
+  font-weight: 500;
+}
+
+/* Stats */
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+.stat {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+.stat-label { font-size: 11px; color: var(--gray-500); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+.stat-value { font-size: 22px; font-weight: 600; color: var(--gray-800); line-height: 1; }
+
+/* Session cards */
+.session-card {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.session-card:hover { border-color: var(--gray-300); }
+.session-head {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  cursor: pointer;
+  gap: 10px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.session-head:active { background: var(--gray-50); }
+.session-info { flex: 1; min-width: 0; }
+.session-date { font-size: 14px; font-weight: 600; color: var(--gray-800); }
+.session-meta { font-size: 12px; color: var(--gray-500); margin-top: 2px; line-height: 1.4; }
+.session-meta .cost-inline { color: var(--green); font-weight: 600; }
+.session-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+.pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.pill-green { background: var(--green-light); color: var(--green); }
+.pill-amber { background: var(--amber-light); color: var(--amber); }
+.pill-red { background: var(--red-light); color: var(--red); }
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--gray-400);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.chevron.open { transform: rotate(180deg); }
+
+.session-body {
+  border-top: 1px solid var(--gray-100);
+  padding: 12px 14px;
+  display: none;
+}
+.session-body.open { display: block; }
+
+/* Attendee rows */
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-400);
+  margin-bottom: 6px;
+}
+.att-list { margin-bottom: 10px; }
+.att-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+.att-row:last-child { border-bottom: none; }
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+  font-family: var(--mono);
+}
+.av-active { background: var(--blue-light); color: var(--blue); }
+.av-withdrawn { background: var(--gray-100); color: var(--gray-400); }
+.att-name { font-size: 13px; flex: 1; color: var(--gray-800); }
+.att-name.wd { text-decoration: line-through; color: var(--gray-400); }
+.wd-tag {
+  font-size: 10px;
+  background: var(--red-light);
+  color: var(--red);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Cost box */
+.cost-box {
+  background: var(--green-light);
+  border: 1px solid #a7d7ba;
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cost-amount { font-size: 22px; font-weight: 700; color: var(--green); font-family: var(--mono); }
+.cost-detail { font-size: 12px; color: var(--green); opacity: 0.8; }
+
+/* Join / status area */
+.action-area { margin-top: 10px; }
+.status-msg { font-size: 12px; padding: 5px 0; }
+.status-in { color: var(--green); font-weight: 500; }
+.status-wd { color: var(--red); }
+.status-full { color: var(--amber); }
+
+/* Notice */
+.notice {
+  font-size: 11px;
+  color: var(--gray-400);
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: var(--gray-50);
+  border-left: 2px solid var(--amber-light);
+  border-radius: 0 6px 6px 0;
+}
+
+/* Views */
+.view { display: none; }
+.view.active { display: block; }
+
+/* Back bar */
+.back-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+.back-bar h2 { font-size: 16px; font-weight: 600; }
+
+/* Form card */
+.form-card {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.form-group { margin-bottom: 10px; }
+.form-group:last-child { margin-bottom: 0; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--gray-500); margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: 0.04em; }
+.form-input {
+  width: 100%;
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid var(--gray-200);
+  border-radius: 7px;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  outline: none;
+}
+.form-input:focus { border-color: var(--green-mid); background: white; box-shadow: 0 0 0 2px rgba(45,138,82,0.1); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* PIN modal */
+.overlay {
+  background: rgba(0,0,0,0.4);
+  border-radius: var(--radius-lg);
+  padding: 2rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+}
+.modal {
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  padding: 1.25rem;
+  width: 100%;
+  max-width: 300px;
+}
+.modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.modal p { font-size: 13px; color: var(--gray-500); margin-bottom: 12px; line-height: 1.5; }
+.pin-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.pin-input {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 16px;
+  padding: 7px 10px;
+  border: 1px solid var(--gray-200);
+  border-radius: 7px;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  outline: none;
+  letter-spacing: 0.1em;
+}
+.pin-input:focus { border-color: var(--green-mid); background: white; }
+.pin-err { font-size: 12px; color: var(--red); min-height: 18px; }
+
+/* Danger zone */
+.danger-zone {
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-top: 4px;
+}
+.danger-zone .section-label { color: #f87171; }
+
+/* Empty state */
+.empty { text-align: center; padding: 2.5rem 1rem; color: var(--gray-400); font-size: 13px; }
+
+/* Share bar */
+.share-bar {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.share-url { font-size: 11px; font-family: var(--mono); color: var(--gray-500); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.copy-btn { flex-shrink: 0; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--gray-800);
+  color: white;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 99px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 9999;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Responsive */
+@media (max-width: 400px) {
+  .form-row { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: 1fr 1fr; }
+}
+
+svg.icon { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: inline-block; vertical-align: -2px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="app-header">
+  <div class="header-row">
+    <h1>
+      <svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 7.07 2.93M4.93 4.93A10 10 0 0 0 2 12"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(45 12 12)"/></svg>
+      NBC Granville Badminton
+    </h1>
+    <div id="host-badge" style="display:none" class="host-badge">
+      <svg class="icon" style="width:12px;height:12px" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Host
+    </div>
+  </div>
+  <div class="sub" id="header-sub">Court 1 & 2 · Join below</div>
+</div>
+
+<div class="container">
+
+  <!-- View: Main -->
+  <div id="view-main" class="view active">
+
+    <div style="margin-top:1rem"></div>
+
+    <!-- Share bar -->
+    <div class="share-bar">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      <span class="share-url" id="share-url-display">Share this link with your group</span>
+      <button class="btn btn-sm copy-btn" onclick="copyLink()">Copy link</button>
+    </div>
+
+    <!-- User bar -->
+    <div class="user-bar">
+      <label for="uname-inp">Your name</label>
+      <input type="text" id="uname-inp" placeholder="e.g. Allen" autocomplete="name" />
+      <button class="btn btn-green" onclick="saveName()">Save</button>
+      <div style="flex-basis:100%; height:0"></div>
+      <div style="flex:1"></div>
+      <div id="host-controls-bar" style="display:none;display:flex;gap:6px;align-items:center">
+        <button class="btn btn-purple btn-sm" onclick="showView('add-session')">
+          <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add session
+        </button>
+        <button class="btn btn-sm" onclick="logoutHost()" style="color:var(--gray-400)">Exit host</button>
+      </div>
+      <button id="host-login-btn" class="btn btn-purple btn-sm" onclick="showView('pin')">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Host login
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Sessions</div>
+        <div class="stat-value" id="stat-sessions">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label" id="stat-my-label">My sessions</div>
+        <div class="stat-value" id="stat-mine">0</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="setFilter('all',this)">All sessions</button>
+      <button class="tab" onclick="setFilter('mine',this)">My sessions</button>
+    </div>
+
+    <!-- Session list -->
+    <div id="session-list"></div>
+
+  </div>
+
+  <!-- View: PIN -->
+  <div id="view-pin" class="view">
+    <div style="margin-top:1rem"></div>
+    <div class="overlay">
+      <div class="modal">
+        <h3>
+          <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Host access
+        </h3>
+        <p>Enter the host PIN to unlock admin controls for your group.</p>
+        <div class="pin-row">
+          <input type="password" class="pin-input" id="pin-inp" placeholder="PIN" onkeydown="if(event.key==='Enter')checkPin()" />
+          <button class="btn btn-solid" onclick="checkPin()">Unlock</button>
+        </div>
+        <div class="pin-err" id="pin-err"></div>
+        <button class="btn btn-sm" style="margin-top:8px;color:var(--gray-400)" onclick="showView('main')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View: Add Session -->
+  <div id="view-add-session" class="view">
+    <div style="margin-top:1rem"></div>
+    <div class="back-bar">
+      <button class="btn" onclick="showView('main')">
+        <svg class="icon" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back
+      </button>
+      <h2>Add session</h2>
+    </div>
+    <div class="form-card">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" id="ns-date" placeholder="e.g. Sat 5 Jul" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Time</label>
+          <input class="form-input" id="ns-time" placeholder="e.g. 7:00–9:00 PM" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Venue</label>
+        <input class="form-input" id="ns-venue" value="NBC Granville" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Courts</label>
+        <input class="form-input" id="ns-courts" placeholder="e.g. Court 1 & 2" value="Court 1 & 2" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Max players</label>
+          <input class="form-input" id="ns-max" type="number" value="12" min="1" max="40" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Court cost ($)</label>
+          <input class="form-input" id="ns-cost" type="number" placeholder="e.g. 80" />
+        </div>
+      </div>
+      <button class="btn btn-solid" style="width:100%;margin-top:4px;justify-content:center" onclick="addSession()">Add session</button>
+    </div>
+  </div>
+
+  <!-- View: Edit Session -->
+  <div id="view-edit-session" class="view">
+    <div style="margin-top:1rem"></div>
+    <div class="back-bar">
+      <button class="btn" onclick="showView('main')">
+        <svg class="icon" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back
+      </button>
+      <h2 id="edit-title">Edit session</h2>
+    </div>
+    <div id="edit-form-wrap"></div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const PIN = 'smash2026';
+const SKEY = 'nbc_badminton_v1';
+const UKEY = 'nbc_user_v1';
+
+let sessions = [];
+let user = { name: '', isHost: false };
+let filter = 'all';
+let openCards = {};
+let editId = null;
+
+// ── Storage ──────────────────────────────────────────────────────────────────
+function useLocalStorage() {
+  // GitHub Pages: use localStorage as shared storage isn't available outside claude.ai
+  return true;
+}
+
+async function loadSessions() {
+  try {
+    const raw = localStorage.getItem(SKEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return getDefaultSessions();
+}
+
+async function saveSessions() {
+  try { localStorage.setItem(SKEY, JSON.stringify(sessions)); } catch(e) {}
+}
+
+function loadUser() {
+  try {
+    const raw = localStorage.getItem(UKEY);
+    return raw ? JSON.parse(raw) : { name: '', isHost: false };
+  } catch { return { name: '', isHost: false }; }
+}
+
+function saveUser() {
+  try { localStorage.setItem(UKEY, JSON.stringify(user)); } catch {}
+}
+
+function getDefaultSessions() {
+  const base = [
+    { date: 'Sat 7 Jun', time: '7:00–9:00 PM' },
+    { date: 'Tue 10 Jun', time: '8:00–10:00 PM' },
+    { date: 'Sat 14 Jun', time: '7:00–9:00 PM' },
+    { date: 'Tue 17 Jun', time: '8:00–10:00 PM' },
+    { date: 'Sat 21 Jun', time: '7:00–9:00 PM' },
+    { date: 'Tue 24 Jun', time: '8:00–10:00 PM' },
+    { date: 'Sat 28 Jun', time: '7:00–9:00 PM' },
+  ];
+  return base.map((b, i) => ({
+    id: 's' + (i + 1),
+    date: b.date,
+    time: b.time,
+    venue: 'NBC Granville',
+    courts: 'Court 1 & 2',
+    maxPlayers: 12,
+    cost: null,
+    attendees: [],
+  }));
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function initials(name) {
+  return name.trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
+}
+
+function fmtDate() {
+  return new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+}
+
+function fmtDateTime() {
+  return new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Views ─────────────────────────────────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  if (id === 'main') renderMain();
+  if (id === 'edit-session') renderEditForm();
+  window.scrollTo(0, 0);
+}
+
+// ── Main view ─────────────────────────────────────────────────────────────────
+function renderMain() {
+  // Share URL
+  document.getElementById('share-url-display').textContent = window.location.href.length > 55
+    ? window.location.href.slice(0, 55) + '…'
+    : window.location.href;
+
+  // User input
+  document.getElementById('uname-inp').value = user.name;
+
+  // Host UI
+  const isHost = user.isHost;
+  document.getElementById('host-badge').style.display = isHost ? 'flex' : 'none';
+  document.getElementById('host-controls-bar').style.display = isHost ? 'flex' : 'none';
+  document.getElementById('host-login-btn').style.display = isHost ? 'none' : 'inline-flex';
+
+  // Stats
+  const active = sessions.reduce((a, s) => a + s.attendees.filter(x => !x.withdrawn).length, 0);
+  const mine = user.name ? sessions.filter(s => s.attendees.some(a => a.name === user.name && !a.withdrawn)).length : 0;
+  document.getElementById('stat-sessions').textContent = sessions.length;
+  document.getElementById('stat-mine').textContent = mine;
+  document.getElementById('stat-my-label').textContent = user.name ? 'My confirmed' : 'Total RSVPs';
+  if (!user.name) document.getElementById('stat-mine').textContent = active;
+
+  // Header sub
+  document.getElementById('header-sub').textContent = 'Court 1 & 2 · NBC Granville · Join below';
+
+  // Session list
+  let list = sessions;
+  if (filter === 'mine' && user.name) {
+    list = sessions.filter(s => s.attendees.some(a => a.name === user.name));
+  }
+
+  const container = document.getElementById('session-list');
+  if (list.length === 0) {
+    container.innerHTML = `<div class="empty">${filter === 'mine' ? "You haven't joined any sessions yet." : 'No sessions added yet.'}</div>`;
+    return;
+  }
+  container.innerHTML = list.map(s => renderCard(s)).join('');
+}
+
+function renderCard(s) {
+  const active = s.attendees.filter(a => !a.withdrawn);
+  const withdrawn = s.attendees.filter(a => a.withdrawn);
+  const max = s.maxPlayers || 12;
+  const isFull = active.length >= max;
+  const isOpen = openCards[s.id];
+  const myEntry = user.name ? s.attendees.find(a => a.name === user.name) : null;
+  const perHead = (s.cost != null && active.length > 0) ? (s.cost / active.length) : null;
+
+  const pillClass = isFull ? 'pill-red' : active.length >= max * 0.7 ? 'pill-amber' : 'pill-green';
+  const pillText = isFull ? 'Full' : `${active.length}/${max}`;
+
+  const costInline = perHead != null ? `<span class="cost-inline"> · $${perHead.toFixed(2)}/person</span>` : '';
+
+  const activeRows = active.map(a => `
+    <div class="att-row">
+      <div class="avatar av-active">${initials(a.name)}</div>
+      <span class="att-name">${escHtml(a.name)}</span>
+      ${a.name === user.name
+        ? `<button class="btn btn-red btn-sm" onclick="withdraw('${s.id}')">Withdraw</button>`
+        : (user.isHost ? `<button class="btn btn-sm" style="color:var(--gray-400);font-size:10px" onclick="hostRemove('${s.id}','${escAttr(a.name)}')">Remove</button>` : '')
+      }
+    </div>
+  `).join('');
+
+  const wdRows = withdrawn.map(a => `
+    <div class="att-row">
+      <div class="avatar av-withdrawn">${initials(a.name)}</div>
+      <span class="att-name wd">${escHtml(a.name)}</span>
+      <span class="wd-tag">${escHtml(a.withdrawnAt)}</span>
+    </div>
+  `).join('');
+
+  const costBox = (s.cost != null && active.length > 0) ? `
+    <div class="cost-box">
+      <div>
+        <div class="cost-amount">$${(s.cost / active.length).toFixed(2)}</div>
+        <div class="cost-detail">$${Number(s.cost).toFixed(2)} ÷ ${active.length} players</div>
+      </div>
+    </div>
+  ` : '';
+
+  let actionArea = '';
+  if (!user.name) {
+    actionArea = `<div class="status-msg" style="color:var(--gray-400)">Enter your name above to join.</div>`;
+  } else if (myEntry && !myEntry.withdrawn) {
+    actionArea = `<div class="status-msg status-in">✓ You're confirmed for this session</div>`;
+  } else if (myEntry && myEntry.withdrawn) {
+    actionArea = `<div class="status-msg status-wd">You withdrew from this session.</div>`;
+  } else if (isFull) {
+    actionArea = `<div class="status-msg status-full">Session is full.</div>`;
+  } else {
+    actionArea = `<button class="btn btn-green" onclick="joinSession('${s.id}')">
+      <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Join this session
+    </button>`;
+  }
+
+  return `
+    <div class="session-card" id="card-${s.id}">
+      <div class="session-head" onclick="toggleCard('${s.id}')">
+        <div class="session-info">
+          <div class="session-date">${escHtml(s.date)} · ${escHtml(s.time)}</div>
+          <div class="session-meta">${escHtml(s.venue)} · ${escHtml(s.courts)}${costInline}</div>
+        </div>
+        <div class="session-right">
+          <span class="pill ${pillClass}">${pillText}</span>
+          ${user.isHost ? `<button class="btn btn-sm" style="color:var(--purple);border-color:#c4b5fd;padding:3px 7px" onclick="event.stopPropagation();openEdit('${s.id}')">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>` : ''}
+          <svg class="icon chevron ${isOpen ? 'open' : ''}" id="chev-${s.id}" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="session-body ${isOpen ? 'open' : ''}" id="body-${s.id}">
+        ${active.length === 0 && withdrawn.length === 0 ? '<div style="font-size:13px;color:var(--gray-400);padding:2px 0 8px">No one joined yet — be first!</div>' : ''}
+        ${active.length > 0 ? `<div class="section-label">Going (${active.length})</div><div class="att-list">${activeRows}</div>` : ''}
+        ${withdrawn.length > 0 ? `<div class="section-label" style="margin-top:2px">Withdrew</div><div class="att-list">${wdRows}</div>` : ''}
+        ${costBox}
+        <div class="action-area">${actionArea}</div>
+        <div class="notice">Withdrawals are visible to everyone. Courts are pre-booked!</div>
+      </div>
+    </div>
+  `;
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(str) {
+  return String(str || '').replace(/'/g,"\\'");
+}
+
+function toggleCard(id) {
+  openCards[id] = !openCards[id];
+  renderMain();
+}
+
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderMain();
+}
+
+// ── User ──────────────────────────────────────────────────────────────────────
+function saveName() {
+  const v = document.getElementById('uname-inp').value.trim();
+  if (!v) return;
+  user.name = v;
+  saveUser();
+  toast('Name saved!');
+  renderMain();
+}
+
+// ── Host ──────────────────────────────────────────────────────────────────────
+function checkPin() {
+  const v = document.getElementById('pin-inp').value;
+  if (v === PIN) {
+    user.isHost = true;
+    saveUser();
+    document.getElementById('pin-inp').value = '';
+    document.getElementById('pin-err').textContent = '';
+    showView('main');
+    toast('Host access unlocked');
+  } else {
+    document.getElementById('pin-err').textContent = 'Incorrect PIN. Try again.';
+  }
+}
+
+function logoutHost() {
+  user.isHost = false;
+  saveUser();
+  renderMain();
+  toast('Exited host mode');
+}
+
+// ── Sessions ──────────────────────────────────────────────────────────────────
+async function joinSession(id) {
+  if (!user.name) return;
+  const s = sessions.find(x => x.id === id);
+  if (!s) return;
+  const existing = s.attendees.find(a => a.name === user.name);
+  if (!existing) {
+    s.attendees.push({ name: user.name, joinedAt: fmtDate(), withdrawn: false, withdrawnAt: null });
+  }
+  openCards[id] = true;
+  await saveSessions();
+  renderMain();
+  toast("You're in! See you on court 🏸");
+}
+
+async function withdraw(id) {
+  if (!user.name) return;
+  const s = sessions.find(x => x.id === id);
+  if (!s) return;
+  const e = s.attendees.find(a => a.name === user.name);
+  if (e) {
+    e.withdrawn = true;
+    e.withdrawnAt = 'withdrew ' + fmtDateTime();
+  }
+  await saveSessions();
+  renderMain();
+  toast('Withdrawal recorded');
+}
+
+async function hostRemove(id, name) {
+  if (!user.isHost) return;
+  const s = sessions.find(x => x.id === id);
+  if (!s) return;
+  const e = s.attendees.find(a => a.name === name);
+  if (e) {
+    e.withdrawn = true;
+    e.withdrawnAt = 'removed by host ' + fmtDate();
+  }
+  await saveSessions();
+  renderMain();
+  toast(name + ' removed');
+}
+
+// ── Add Session ───────────────────────────────────────────────────────────────
+async function addSession() {
+  const date = document.getElementById('ns-date').value.trim();
+  const time = document.getElementById('ns-time').value.trim();
+  const venue = document.getElementById('ns-venue').value.trim() || 'NBC Granville';
+  const courts = document.getElementById('ns-courts').value.trim() || 'Court 1 & 2';
+  const max = parseInt(document.getElementById('ns-max').value) || 12;
+  const costVal = document.getElementById('ns-cost').value;
+  const cost = costVal ? parseFloat(costVal) : null;
+
+  if (!date || !time) { toast('Please enter date and time'); return; }
+
+  sessions.push({
+    id: 'ses_' + Date.now(),
+    date, time, venue, courts,
+    maxPlayers: max,
+    cost,
+    attendees: [],
+  });
+
+  await saveSessions();
+  // Reset form
+  document.getElementById('ns-date').value = '';
+  document.getElementById('ns-time').value = '';
+  document.getElementById('ns-cost').value = '';
+  showView('main');
+  toast('Session added!');
+}
+
+// ── Edit Session ──────────────────────────────────────────────────────────────
+function openEdit(id) {
+  editId = id;
+  showView('edit-session');
+}
+
+function renderEditForm() {
+  const s = sessions.find(x => x.id === editId);
+  if (!s) return;
+  document.getElementById('edit-title').textContent = 'Edit · ' + s.date;
+
+  const active = s.attendees.filter(a => !a.withdrawn);
+  const withdrawn = s.attendees.filter(a => a.withdrawn);
+  const perHead = s.cost != null && active.length > 0 ? (s.cost / active.length).toFixed(2) : null;
+
+  const activeRows = active.map(a => `
+    <div class="att-row">
+      <div class="avatar av-active">${initials(a.name)}</div>
+      <span class="att-name">${escHtml(a.name)}</span>
+      <button class="btn btn-red btn-sm" onclick="hostRemoveAndRefresh('${escAttr(a.name)}')">Remove</button>
+    </div>
+  `).join('');
+
+  const wdRows = withdrawn.map(a => `
+    <div class="att-row">
+      <div class="avatar av-withdrawn">${initials(a.name)}</div>
+      <span class="att-name wd">${escHtml(a.name)}</span>
+      <span class="wd-tag">${escHtml(a.withdrawnAt)}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('edit-form-wrap').innerHTML = `
+    <div class="form-card">
+      <div class="section-label" style="margin-bottom:10px">Session details</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" id="ed-date" value="${escHtml(s.date)}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Time</label>
+          <input class="form-input" id="ed-time" value="${escHtml(s.time)}" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Venue</label>
+        <input class="form-input" id="ed-venue" value="${escHtml(s.venue)}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Courts</label>
+        <input class="form-input" id="ed-courts" value="${escHtml(s.courts)}" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Max players</label>
+          <input class="form-input" id="ed-max" type="number" value="${s.maxPlayers || 12}" min="1" max="40" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Court cost ($)</label>
+          <input class="form-input" id="ed-cost" type="number" placeholder="e.g. 80" value="${s.cost != null ? s.cost : ''}" />
+        </div>
+      </div>
+      <button class="btn btn-solid" style="width:100%;margin-top:6px;justify-content:center" onclick="saveEdit()">Save changes</button>
+    </div>
+
+    ${perHead ? `
+    <div class="form-card" style="background:var(--green-light);border-color:#a7d7ba">
+      <div class="section-label" style="margin-bottom:6px">Cost split</div>
+      <div class="cost-amount">$${perHead}</div>
+      <div style="font-size:12px;color:var(--green);margin-top:2px">$${Number(s.cost).toFixed(2)} ÷ ${active.length} confirmed players</div>
+    </div>` : ''}
+
+    ${active.length > 0 || withdrawn.length > 0 ? `
+    <div class="form-card">
+      <div class="section-label" style="margin-bottom:8px">Attendees (${active.length} confirmed)</div>
+      ${active.length > 0 ? `<div class="att-list">${activeRows}</div>` : ''}
+      ${withdrawn.length > 0 ? `
+        <div class="section-label" style="margin-top:8px;margin-bottom:6px">Withdrew / removed</div>
+        <div class="att-list">${wdRows}</div>
+      ` : ''}
+    </div>` : ''}
+
+    <div class="form-card">
+      <div class="danger-zone">
+        <div class="section-label">Danger zone</div>
+        <div style="font-size:12px;color:var(--gray-500);margin:6px 0 10px">This permanently deletes the session and all attendee data.</div>
+        <button class="btn btn-red" onclick="deleteSession()">
+          <svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Delete session
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+async function saveEdit() {
+  const s = sessions.find(x => x.id === editId);
+  if (!s) return;
+  s.date = document.getElementById('ed-date').value.trim() || s.date;
+  s.time = document.getElementById('ed-time').value.trim() || s.time;
+  s.venue = document.getElementById('ed-venue').value.trim() || s.venue;
+  s.courts = document.getElementById('ed-courts').value.trim() || s.courts;
+  s.maxPlayers = parseInt(document.getElementById('ed-max').value) || 12;
+  const cv = document.getElementById('ed-cost').value;
+  s.cost = cv ? parseFloat(cv) : null;
+  await saveSessions();
+  showView('main');
+  toast('Session updated!');
+}
+
+async function hostRemoveAndRefresh(name) {
+  await hostRemove(editId, name);
+  renderEditForm();
+}
+
+async function deleteSession() {
+  if (!confirm('Delete this session? This cannot be undone.')) return;
+  sessions = sessions.filter(x => x.id !== editId);
+  await saveSessions();
+  showView('main');
+  toast('Session deleted');
+}
+
+// ── Share ─────────────────────────────────────────────────────────────────────
+function copyLink() {
+  const url = window.location.href;
+  navigator.clipboard.writeText(url).then(() => toast('Link copied!')).catch(() => {
+    const el = document.createElement('textarea');
+    el.value = url;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast('Link copied!');
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(async () => {
+  sessions = await loadSessions();
+  user = loadUser();
+  renderMain();
+})();
+</script>
+</body>
+</html>
