@@ -340,6 +340,12 @@ function findAttKey(attendees, name) {
   const lower = name.toLowerCase();
   return Object.keys(attendees||{}).find(k => k.toLowerCase() === lower) || dbKey(name);
 }
+// True headcount — expands guest entries by their count
+function headcount(attendees) {
+  return Object.values(attendees||{}).filter(a=>!a.withdrawn).reduce((sum,a)=>{
+    return sum + (a.isGuest ? (a.count||1) : 1);
+  }, 0);
+}
 
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -496,32 +502,42 @@ function renderMain() {
 
 function renderCard(s, past) {
   const atts = Object.values(s.attendees||{});
-  const active = atts.filter(a=>!a.withdrawn);
-  const withdrawn = atts.filter(a=>a.withdrawn);
+  const active = atts.filter(a=>!a.withdrawn&&!a.isGuest);
+  const withdrawn = atts.filter(a=>a.withdrawn&&!a.isGuest);
+  const total_heads = headcount(s.attendees);
   const max = s.maxPlayers||16;
-  const isFull = active.length>=max;
+  const isFull = total_heads>=max;
   const isOpen = openCards[s.id];
-  const myEntry = user.name ? atts.find(a=>a.name.toLowerCase()===user.name.toLowerCase()) : null;
+  const myEntry = user.name ? atts.find(a=>a.name.toLowerCase()===user.name.toLowerCase()&&!a.isGuest) : null;
 
   // cost calculation
   const courtFee = s.courtFee||COURT_FEE;
   const shuttles = s.shuttlesUsed != null ? s.shuttlesUsed : null;
   const shuttleCost = s.shuttleTotalCost != null ? s.shuttleTotalCost : null;
   const totalCost = shuttleCost != null ? courtFee + shuttleCost : null;
-  const perHead = totalCost != null && active.length > 0 ? totalCost / active.length : null;
+  const perHead = totalCost != null && total_heads > 0 ? totalCost / total_heads : null;
 
-  const pillClass = past?'pp':isFull?'pr':active.length>=max*.7?'pa':'pg';
-  const pillText = past?'Past':(isFull?'Full':`${active.length}/${max}`);
+  const pillClass = past?'pp':isFull?'pr':total_heads>=max*.7?'pa':'pg';
+  const pillText = past?'Past':(isFull?'Full':`${total_heads}/${max}`);
   const costInline = perHead!=null ? `<span class="gc"> · $${perHead.toFixed(2)}/person</span>` : '';
 
   const activeRows = active.map(a=>{
     const isPaid = a.paid;
+    const isMe = a.name.toLowerCase()===user.name.toLowerCase();
+    const guestKey = dbKey(a.name + ' guests');
+    const guestEntry = (s.attendees||{})[guestKey];
+    const guestCount = (guestEntry && !guestEntry.withdrawn) ? (guestEntry.count||0) : 0;
     return `<div class="arow">
       <div class="av ${isPaid?'av-p':'av-a'}">${ini(a.name)}</div>
-      <span class="aname">${esc(a.name)}</span>
+      <span class="aname">${esc(a.name)}${guestCount>0?` <span style="font-size:11px;color:var(--g400)">+${guestCount} guest${guestCount>1?'s':''}</span>`:''}</span>
       ${isPaid ? `<span class="paid-tag"><svg class="icon" style="width:10px;height:10px" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Paid</span>` : ''}
-      ${!past && a.name.toLowerCase()===user.name.toLowerCase() ? `<button class="btn btn-red btn-sm" onclick="window.withdraw('${s.id}')">Withdraw</button>` : ''}
-      ${user.isHost && a.name.toLowerCase()!==user.name.toLowerCase() ? `<button class="btn btn-sm" style="color:var(--g400);font-size:10px" onclick="window.hostRemove('${s.id}','${escA(a.name)}')">Remove</button>` : ''}
+      ${!past && isMe ? `
+        <div style="display:flex;align-items:center;gap:3px">
+          ${guestCount>0?`<button class="btn btn-sm" style="color:var(--red);border-color:#fca5a5;padding:2px 7px;font-size:13px;font-weight:600" onclick="window.adjustGuests('${s.id}','${escA(a.name)}',-1)">−</button>`:''}
+          <button class="btn btn-sm" style="color:var(--g500);padding:2px 7px;font-size:11px" onclick="window.adjustGuests('${s.id}','${escA(a.name)}',1)">+guest</button>
+        </div>
+        <button class="btn btn-red btn-sm" onclick="window.withdraw('${s.id}')">Withdraw</button>` : ''}
+      ${user.isHost && !isMe ? `<button class="btn btn-sm" style="color:var(--g400);font-size:10px" onclick="window.hostRemove('${s.id}','${escA(a.name)}')">Remove</button>` : ''}
     </div>`;
   }).join('');
 
@@ -548,7 +564,7 @@ function renderCard(s, past) {
           <span>Total</span><span>$${totalCost.toFixed(2)}</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--green);opacity:.7">
-          <span>÷ ${active.length} players</span><span></span>
+          <span>÷ ${total_heads} players</span><span></span>
         </div>
       </div>
       <div style="font-size:12px;color:var(--green);opacity:.8;margin-bottom:2px">Each person pays</div>
@@ -589,7 +605,7 @@ function renderCard(s, past) {
     </div>
     <div class="sbody ${isOpen?'open':''}">
       ${active.length===0&&withdrawn.length===0?'<div style="font-size:13px;color:var(--g400);padding:2px 0 8px">No one joined yet.</div>':''}
-      ${active.length>0?`<div class="slabel">Going (${active.length})</div><div class="alist">${activeRows}</div>`:''}
+      ${active.length>0?`<div class="slabel">Going (${total_heads})</div><div class="alist">${activeRows}</div>`:''}
       ${withdrawn.length>0?`<div class="slabel" style="margin-top:2px">Withdrew</div><div class="alist">${wdRows}</div>`:''}
       ${costBox}
       ${actionArea ? `<div style="margin-top:10px">${actionArea}</div>` : ''}
@@ -692,20 +708,24 @@ function renderEditForm() {
   if (!s) return;
   document.getElementById('edit-title').textContent = 'Edit · ' + fmtDateDisplay(s.dateISO);
   const atts = Object.values(s.attendees||{});
-  const active = atts.filter(a=>!a.withdrawn);
-  const withdrawn = atts.filter(a=>a.withdrawn);
+  const active = atts.filter(a=>!a.withdrawn&&!a.isGuest);
+  const withdrawn = atts.filter(a=>a.withdrawn&&!a.isGuest);
   const past = isPast(s.dateISO, s.time);
+  const th = headcount(s.attendees);
 
   const courtFee = s.courtFee||COURT_FEE;
   const shuttles = s.shuttlesUsed;
   const shuttleCost = s.shuttleTotalCost!=null ? s.shuttleTotalCost : null;
   const totalCost = shuttleCost!=null ? courtFee+shuttleCost : null;
-  const perHead = totalCost!=null&&active.length>0 ? totalCost/active.length : null;
+  const perHead = totalCost!=null&&th>0 ? totalCost/th : null;
 
-  const activeRows = active.map(a=>`
-    <div class="arow">
+  const activeRows = active.map(a=>{
+    const guestKey = dbKey(a.name + ' guests');
+    const guestEntry = (s.attendees||{})[guestKey];
+    const guestCount = (guestEntry && !guestEntry.withdrawn) ? (guestEntry.count||0) : 0;
+    return `<div class="arow">
       <div class="av ${a.paid?'av-p':'av-a'}">${ini(a.name)}</div>
-      <span class="aname">${esc(a.name)}</span>
+      <span class="aname">${esc(a.name)}${guestCount>0?` <span style="font-size:11px;color:var(--g400)">+${guestCount} guest${guestCount>1?'s':''}</span>`:''}</span>
       <div style="display:flex;gap:4px;align-items:center;margin-left:auto">
         <button class="btn btn-sm ${a.paid?'btn-green':''}" onclick="window.togglePaid('${s.id}','${escA(a.name)}')" title="${a.paid?'Mark unpaid':'Mark paid'}">
           ${a.paid
@@ -714,7 +734,8 @@ function renderEditForm() {
         </button>
         <button class="btn btn-red btn-sm" onclick="window.hostRemoveEdit('${escA(a.name)}')">Remove</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   const wdRows = withdrawn.map(a=>`
     <div class="arow">
@@ -776,7 +797,7 @@ function renderEditForm() {
 
     ${active.length>0||withdrawn.length>0?`
     <div class="fcard">
-      <div class="slabel" style="margin-bottom:8px">Attendees — ${active.length} confirmed · ${active.filter(a=>a.paid).length} paid</div>
+      <div class="slabel" style="margin-bottom:8px">Attendees — ${th} total · ${active.filter(a=>a.paid).length} paid</div>
       ${active.length>0?`<div class="alist">${activeRows}</div>`:''}
       ${withdrawn.length>0?`<div class="slabel" style="margin-top:8px;margin-bottom:6px">Withdrew / removed</div><div class="alist">${wdRows}</div>`:''}
     </div>`:''}
@@ -823,10 +844,10 @@ window.previewCost = function() {
   const shuttles = document.getElementById('ed-shuttles').value;
   const sc = parseFloat(document.getElementById('ed-shuttle-total').value);
   if (isNaN(sc)) { document.getElementById('cost-preview').innerHTML=''; return; }
-  const active = Object.values(s.attendees||{}).filter(a=>!a.withdrawn);
+  const th = headcount(s.attendees);
   const total = cf + sc;
-  const perHead = active.length>0 ? total/active.length : null;
-  document.getElementById('cost-preview').innerHTML = perHead!=null ? renderCostPreview(cf, shuttles||null, sc, total, perHead, active.length) : '';
+  const perHead = th>0 ? total/th : null;
+  document.getElementById('cost-preview').innerHTML = perHead!=null ? renderCostPreview(cf, shuttles||null, sc, total, perHead, th) : '';
 };
 
 window.saveEdit = async function() {
@@ -1058,11 +1079,39 @@ window.joinSession = async function(id) {
   openCards[id]=true; toast("You're in! See you on court 🏸");
 };
 
+window.adjustGuests = async function(id, name, delta) {
+  if(!user.name) return;
+  const s = sessions.find(x=>x.id===id);
+  if(!s) return;
+  const guestKey = dbKey(name + ' guests');
+  const existing = (s.attendees||{})[guestKey];
+  const currentCount = (existing && !existing.withdrawn) ? (existing.count||0) : 0;
+  const newCount = currentCount + delta;
+  if (newCount < 0) return;
+  // Check capacity when adding
+  if (delta > 0) {
+    if (headcount(s.attendees) >= (s.maxPlayers||16)) { toast('Session is full — no room for more guests'); return; }
+  }
+  if (newCount === 0) {
+    await update(ref(db,`sessions/${id}/attendees/${guestKey}`), {withdrawn:true, withdrawnAt:'removed '+fmtD()});
+    toast('Guest removed');
+  } else {
+    await set(ref(db,`sessions/${id}/attendees/${guestKey}`), {name: name+' guests', count:newCount, joinedAt:fmtD(), withdrawn:false, withdrawnAt:null, paid:false, isGuest:true});
+    toast(`+${newCount} guest${newCount>1?'s':''} added`);
+  }
+};
+
 window.withdraw = async function(id) {
   if(!user.name)return;
   const s=sessions.find(x=>x.id===id);
   const k=findAttKey(s?s.attendees:{}, user.name);
   await update(ref(db,`sessions/${id}/attendees/${k}`),{withdrawn:true,withdrawnAt:'withdrew '+fmtDT()});
+  // Also withdraw their guests if present
+  const guestKey = dbKey(user.name + ' guests');
+  const guests = (s&&s.attendees||{})[guestKey];
+  if (guests && !guests.withdrawn) {
+    await update(ref(db,`sessions/${id}/attendees/${guestKey}`),{withdrawn:true,withdrawnAt:'withdrew with '+user.name});
+  }
   toast('Withdrawal recorded');
 };
 
@@ -1097,7 +1146,7 @@ Shuttlecocks${shuttles!=null?' ('+shuttles+'x)':''}:   $${sc.toFixed(2)}
 ─────────────────
 Total:            $${total.toFixed(2)}
 
-Total ${active.length} players and each person pays: $${perHead.toFixed(2)}
+Total ${headcount(s.attendees)} players and each person pays: $${perHead.toFixed(2)}
 
 BSB: 112-879
 Acc: 477398765
