@@ -191,6 +191,7 @@ svg.icon{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;str
     <div class="stats">
       <div class="stat"><div class="stat-lbl">Sessions</div><div class="stat-val" id="st-s">—</div></div>
       <div class="stat"><div class="stat-lbl" id="st-ml">My confirmed</div><div class="stat-val" id="st-m">—</div></div>
+      <div class="stat"><div class="stat-lbl">Next session players</div><div class="stat-val" id="st-n">—</div></div>
     </div>
     <div class="tabs">
       <button class="tab active" onclick="setFilter('upcoming',this)">Upcoming</button>
@@ -470,13 +471,28 @@ function renderMain() {
   document.getElementById('hlbtn').style.display = isHost?'none':'inline-flex';
 
   const upcoming = sessions.filter(s=>!isPast(s.dateISO, s.time));
-  const thisWeek = upcoming.filter(s=>isThisWeek(s.dateISO));
-  const twCount = thisWeek.length>0 ? Object.values(thisWeek[0].attendees||{}).filter(a=>!a.withdrawn).length : 0;
-  const mine = user.name ? sessions.filter(s=>Object.values(s.attendees||{}).some(a=>a.name.toLowerCase()===user.name.toLowerCase()&&!a.withdrawn)).length : 0;
+  const nextSession = upcoming[0] || null;
+  const nextCount = nextSession ? headcount(nextSession.attendees) : 0;
+  const mine = user.name ? sessions.filter(s=>Object.values(s.attendees||{}).some(a=>a.name.toLowerCase()===user.name.toLowerCase()&&!a.withdrawn&&!a.isGuest)).length : 0;
 
   document.getElementById('st-s').textContent = upcoming.length;
-  document.getElementById('st-m').textContent = user.name ? mine : sessions.reduce((a,s)=>a+Object.values(s.attendees||{}).filter(x=>!x.withdrawn).length,0);
-  document.getElementById('st-ml').textContent = user.name ? 'My confirmed' : 'Total RSVPs';
+  if (user.name) {
+    document.getElementById('st-ml').textContent = 'My confirmed';
+    document.getElementById('st-m').textContent = mine;
+    document.getElementById('st-m').style.fontSize = '20px';
+  } else {
+    document.getElementById('st-ml').textContent = 'Next session';
+    const nextDate = nextSession ? nextSession.dateISO : null;
+    if (nextDate) {
+      const d = new Date(nextDate + 'T00:00:00');
+      document.getElementById('st-m').textContent = d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+      document.getElementById('st-m').style.fontSize = '13px';
+    } else {
+      document.getElementById('st-m').textContent = '—';
+      document.getElementById('st-m').style.fontSize = '20px';
+    }
+  }
+  document.getElementById('st-n').textContent = nextCount || '—';
 
   let list;
   if (filter==='upcoming') list = upcoming;
