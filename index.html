@@ -1012,15 +1012,18 @@ function renderHistory() {
 function renderPlayers() {
   const container = document.getElementById('players-list');
 
-  // Build map of players — only count upcoming sessions
+  // Build map of players — scan all sessions for names, count only upcoming for session count
   const playerMap = {};
-  sessions.filter(s => !isPast(s.dateISO, s.time)).forEach(s => {
+  sessions.forEach(s => {
+    const isUpcoming = !isPast(s.dateISO, s.time);
     Object.values(s.attendees||{}).forEach(a => {
-      if (!a.name) return;
+      if (!a.name || a.isGuest) return;
       const key = a.name.toLowerCase();
       if (!playerMap[key]) playerMap[key] = { name: a.name, sessions: 0, withdrawn: 0 };
-      if (!a.withdrawn) playerMap[key].sessions++;
-      else playerMap[key].withdrawn++;
+      if (isUpcoming) {
+        if (!a.withdrawn) playerMap[key].sessions++;
+        else playerMap[key].withdrawn++;
+      }
     });
   });
 
