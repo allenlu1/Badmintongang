@@ -473,7 +473,7 @@ function renderMain() {
   const upcoming = sessions.filter(s=>!isPast(s.dateISO, s.time));
   const nextSession = upcoming[0] || null;
   const nextCount = nextSession ? headcount(nextSession.attendees) : 0;
-  const mine = user.name ? sessions.filter(s=>Object.values(s.attendees||{}).some(a=>a.name.toLowerCase()===user.name.toLowerCase()&&!a.withdrawn&&!a.isGuest)).length : 0;
+  const mine = user.name ? upcoming.filter(s=>Object.values(s.attendees||{}).some(a=>a.name.toLowerCase()===user.name.toLowerCase()&&!a.withdrawn&&!a.isGuest)).length : 0;
 
   document.getElementById('st-s').textContent = upcoming.length;
   if (user.name) {
