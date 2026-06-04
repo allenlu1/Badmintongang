@@ -682,6 +682,33 @@ window.removeDefaultPlayer = async function(name) {
   toast(name + ' removed from defaults');
 };
 
+window.confirmDeletePlayer = async function(name) {
+  if (!confirm(`Remove "${name}" completely from the system?\n\nThis will:\n• Remove them from the default players list\n• Remove them from all upcoming sessions\n\nPast session history is kept.\n\nThis cannot be undone.`)) return;
+
+  // Remove from regulars if present
+  if (REGULARS.some(r => r.toLowerCase() === name.toLowerCase())) {
+    REGULARS.splice(REGULARS.findIndex(r => r.toLowerCase() === name.toLowerCase()), 1);
+    await set(ref(db,'regulars'), REGULARS);
+  }
+
+  // Remove from all upcoming sessions
+  const upcoming = sessions.filter(s => !isPast(s.dateISO, s.time));
+  for (const s of upcoming) {
+    const k = findAttKey(s.attendees, name);
+    if ((s.attendees||{})[k]) {
+      await remove(ref(db, `sessions/${s.id}/attendees/${k}`));
+    }
+    // Also remove their guest entry if any
+    const gk = dbKey(name + ' guests');
+    if ((s.attendees||{})[gk]) {
+      await remove(ref(db, `sessions/${s.id}/attendees/${gk}`));
+    }
+  }
+
+  toast(`${name} removed from system`);
+  renderPlayers();
+};
+
 window.confirmRemoveDefault = function(name) {
   if (!confirm(`Remove ${name} from default players?\n\nThey won't be auto-added to future sessions. Past sessions are unchanged.`)) return;
   window.removeDefaultPlayer(name).then(()=>renderPlayers());
@@ -1032,9 +1059,12 @@ function renderPlayers() {
       <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
         ${isReg
           ? `<span class="pill pg" style="font-size:10px">Default</span>
-             <button class="btn btn-red btn-sm" onclick="window.confirmRemoveDefault('${escA(p.name)}')">Remove</button>`
+             <button class="btn btn-red btn-sm" onclick="window.confirmRemoveDefault('${escA(p.name)}')">Remove default</button>`
           : `<button class="btn btn-sm" style="color:var(--green);border-color:#a7d7ba;background:var(--green-l)" onclick="window.confirmAddDefault('${escA(p.name)}')">+ Set default</button>`
         }
+        <button class="btn btn-sm" style="color:var(--g400);border-color:var(--g200)" onclick="window.confirmDeletePlayer('${escA(p.name)}')" title="Remove from system">
+          <svg class="icon" style="width:12px;height:12px" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
       </div>
     </div>`;
   }
